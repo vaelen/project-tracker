@@ -129,9 +129,6 @@ track --config /path/to/config.toml projects list
 ### Configuration Options
 
 ```toml
-# Anthropic API Key (required)
-api_key = "your-anthropic-api-key-here"
-
 # Data Storage Directory
 data_dir = "~/.project-tracker/data"
 
@@ -186,6 +183,68 @@ track report --format markdown
 track --config /path/to/config.toml projects list
 ```
 
+### MCP Server Mode
+
+Project Tracker includes a Model Context Protocol (MCP) server that exposes all functionality to AI assistants like Claude Desktop.
+
+#### Building the MCP Server
+```bash
+# Build the MCP server binary
+cargo build --release --bin track-mcp
+
+# The binary will be at: target/release/track-mcp
+```
+
+#### Configuring Claude Desktop
+
+Add the following to your Claude Desktop configuration file:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "project-tracker": {
+      "command": "/path/to/project-tracker/target/release/track-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+Replace `/path/to/project-tracker` with the actual path to your project directory.
+
+#### Available Tools
+
+The MCP server provides the following tools to AI assistants:
+
+**Projects:**
+- `list_projects` - List all projects
+- `get_project` - Get a project by UUID
+- `create_project` - Create a new project (with name, description, project_type, jira_initiative)
+
+**People:**
+- `list_people` - List all people
+- `search_people` - Search people by name
+- `get_person` - Get a person by email
+- `create_person` - Create a new person (with email, name, team)
+
+**Milestones:**
+- `list_milestones` - List milestones for a project
+
+#### Usage Example
+
+Once configured, you can ask Claude Desktop to interact with your Project Tracker data:
+
+- "Show me all my projects"
+- "Create a new project called 'Q2 Infrastructure Upgrade'"
+- "Who are all the people on my team?"
+- "List the milestones for project XYZ"
+
+The MCP server uses the same database as the CLI and GUI, so all data is synchronized across all interfaces.
+
 ## Development
 
 ### Project Structure
@@ -193,12 +252,12 @@ track --config /path/to/config.toml projects list
 project-tracker/
 ├── src/                    # Rust source (shared library + CLI)
 │   ├── main.rs            # CLI entry point
+│   ├── mcp_server.rs      # MCP server entry point
 │   ├── lib.rs             # Shared library root
-│   ├── agent/             # Claude API integration
 │   ├── cli/               # CLI command handlers
 │   ├── core/              # Core business logic
+│   ├── db/                # Database models and repositories
 │   ├── storage/           # File I/O and data persistence
-│   ├── tools/             # Claude agent tool definitions
 │   └── utils/             # Utility functions
 ├── src-tauri/             # Tauri backend
 │   ├── src/main.rs        # Tauri app entry
@@ -210,7 +269,6 @@ project-tracker/
 │   └── vite.config.ts     # Vite configuration
 ├── tests/                 # Rust tests
 ├── docs/                  # Detailed documentation
-├── data/                  # Default data directory
 └── Cargo.toml             # Rust workspace configuration
 ```
 
@@ -225,6 +283,17 @@ cargo build
 cargo build --release
 
 # The binary will be at: target/release/track
+```
+
+#### MCP Server Binary
+```bash
+# Development build
+cargo build --bin track-mcp
+
+# Release build (optimized)
+cargo build --release --bin track-mcp
+
+# The binary will be at: target/release/track-mcp
 ```
 
 #### GUI Application

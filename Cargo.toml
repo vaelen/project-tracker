@@ -11,15 +11,19 @@ license = "MIT"
 description = "An intelligent project and resource management application for software engineering managers, powered by Claude AI"
 homepage = "https://github.com/vaelen/project-tracker"
 repository = "https://github.com/vaelen/project-tracker"
-keywords = ["project-management", "resource-allocation", "claude-ai", "engineering-management"]
+keywords = ["project-management", "resource-allocation", "mcp", "engineering-management"]
 categories = ["command-line-utilities"]
 
 [[bin]]
 name = "track"
 path = "src/main.rs"
 
+[[bin]]
+name = "track-mcp"
+path = "src/mcp_server.rs"
+
 [lib]
-name = "claude_tracker"
+name = "project_tracker"
 path = "src/lib.rs"
 
 [dependencies]
@@ -40,6 +44,10 @@ toml = "0.8"
 
 # Database
 rusqlite = { version = "0.31", features = ["bundled", "chrono", "uuid"] }
+
+# MCP (Model Context Protocol)
+rmcp = { version = "0.8", features = ["server", "transport-io"] }
+schemars = "1.0"
 
 # Date/time handling
 chrono = { version = "0.4", features = ["serde"] }

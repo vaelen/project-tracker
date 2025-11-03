@@ -1,11 +1,6 @@
 # Project Tracker Configuration File
 # Copy this file to ~/.project-tracker/config.toml and customize as needed
 
-# Anthropic API Key
-# Required for Claude AI integration
-# Get your API key from: https://console.anthropic.com/
-api_key = "your-anthropic-api-key-here"
-
 # Data Storage Directory
 # Directory where all application data (including SQLite database) is stored
 # Supports tilde (~) expansion for home directory

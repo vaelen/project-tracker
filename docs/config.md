@@ -2,7 +2,9 @@
 
 ## Overview
 
-Project Tracker uses a TOML-based configuration file to manage application settings. The configuration file allows you to customize the application's behavior, set API credentials, configure data storage locations, and control logging output.
+Project Tracker uses a TOML-based configuration file to manage application settings. The configuration file allows you to customize the application's behavior, configure data storage locations, set Jira integration, and control logging output.
+
+**Note:** For AI assistant integration via the MCP server, see the [MCP Server Configuration](#mcp-server-configuration) section below.
 
 ## Configuration File Location
 
@@ -33,15 +35,10 @@ The configuration file uses TOML (Tom's Obvious, Minimal Language) format. TOML 
 ```toml
 # Project Tracker Configuration File
 
-# Anthropic API Key
-# Required for Claude AI integration
-# Get your API key from: https://console.anthropic.com/
-api_key = "sk-ant-api03-..."
-
 # Data Storage Directory
 # Directory where all application data (including SQLite database) is stored
 # Supports tilde (~) expansion for home directory
-data_dir = "~/.project-tracker/data"
+data_dir = "~/.project-tracker"
 
 # Jira Configuration
 # Base URL for Jira tickets (include trailing slash)
@@ -51,6 +48,10 @@ jira_url = "https://jira.company.com/browse/"
 # Default email domain for your organization
 # When adding people, if only a name is provided, this domain will be suggested
 default_email_domain = "company.com"
+
+# Available project types
+# These are presented as options when creating/editing projects
+project_types = ["Personal", "Team", "Company"]
 
 # Logging Configuration
 [logging]
@@ -62,41 +63,19 @@ level = "info"
 
 ### Top-Level Options
 
-#### `api_key` (String, Required)
-
-Your Anthropic API key for Claude integration.
-
-**Type:** String
-**Required:** Yes
-**Default:** `"your-anthropic-api-key-here"`
-**Example:** `"sk-ant-api03-..."`
-
-**Description:** This key is used to authenticate with the Anthropic API for Claude AI features. You must replace the default placeholder value with your actual API key.
-
-**How to Get:**
-1. Visit https://console.anthropic.com/
-2. Sign in or create an account
-3. Navigate to API Keys section
-4. Generate a new API key
-5. Copy the key and paste it into your config file
-
-**Security Note:** Keep your API key secure. Do not commit configuration files containing real API keys to version control.
-
----
-
 #### `data_dir` (String, Required)
 
 Path to the directory where all application data is stored.
 
 **Type:** String
 **Required:** Yes
-**Default:** `"~/.project-tracker/data"`
-**Example:** `"/home/user/documents/project-tracker-data"`
+**Default:** `"~/.project-tracker"`
+**Example:** `"/home/user/documents/project-tracker"`
 
 **Description:** All application data is stored in an SQLite database within this directory. The path supports tilde (`~`) expansion for the home directory.
 
 **Files Created:**
-- `project-tracker.db` - SQLite database containing all application data
+- `project-tracker.db` - SQLite database containing all application data (projects, people, milestones, notes)
 
 **Notes:**
 - The directory is created automatically if it doesn't exist
@@ -190,6 +169,47 @@ default_email_domain = "company.com"
 
 ---
 
+#### `project_types` (Array of Strings, Optional)
+
+List of available project types.
+
+**Type:** Array of Strings
+**Required:** No
+**Default:** `["Personal", "Team", "Company"]`
+**Example:** `["Personal", "Team", "Department", "Company"]`
+
+**Description:** Defines the project types that are available when creating or editing projects. These types help categorize projects by scope and ownership.
+
+**How It Works:**
+- When creating a project, you can select one of these types
+- Types are stored in the database with each project
+- You can add custom types to match your organization's structure
+
+**Configuration Examples:**
+
+Default Types:
+```toml
+project_types = ["Personal", "Team", "Company"]
+```
+
+Custom Organization Structure:
+```toml
+project_types = ["Personal", "Squad", "Tribe", "Organization"]
+```
+
+Engineering Team Structure:
+```toml
+project_types = ["Personal", "Backend", "Frontend", "Infrastructure", "Cross-Team"]
+```
+
+**Notes:**
+- Order matters - types are presented in the order listed
+- Existing projects with types not in this list will still display correctly
+- Changing this list does not affect existing project data
+- Type names should be concise (1-2 words recommended)
+
+---
+
 ### Logging Section
 
 The `[logging]` section controls application logging behavior.
@@ -261,7 +281,7 @@ The application validates the configuration file on startup and will report erro
    code ~/.project-tracker/config.toml
    ```
 
-4. Update the `api_key` with your actual Anthropic API key
+4. Optionally customize settings (Jira URL, email domain, project types, etc.)
 
 5. Run the application again to verify the configuration is correct
 
@@ -296,40 +316,42 @@ track --config /tmp/test-config.toml projects list
 
 1. Create a template configuration file (`config.toml.template`):
    ```toml
-   api_key = "REPLACE_WITH_YOUR_API_KEY"
-   data_dir = "~/.project-tracker/data"
+   data_dir = "~/.project-tracker"
+   jira_url = "https://jira.company.com/browse/"
+   default_email_domain = "company.com"
+   project_types = ["Personal", "Team", "Company"]
 
    [logging]
    level = "info"
    ```
 
-2. Add the real config to `.gitignore`:
+2. Add the real config and data to `.gitignore`:
    ```
-   ~/.project-tracker/config.toml
+   ~/.project-tracker/
    config.toml
    *.secret.toml
    ```
 
-3. Users copy the template and add their own API key
+3. Users copy the template and customize for their environment
 
 ## Configuration Examples
 
 ### Minimal Configuration
 
 ```toml
-api_key = "sk-ant-api03-..."
-data_dir = "~/.project-tracker/data"
+data_dir = "~/.project-tracker"
 jira_url = "https://jira.company.com/browse/"
 default_email_domain = "company.com"
+project_types = ["Personal", "Team", "Company"]
 ```
 
 ### Development Configuration
 
 ```toml
-api_key = "sk-ant-api03-..."
 data_dir = "/tmp/project-tracker-dev"
 jira_url = "https://jira-dev.company.com/browse/"
 default_email_domain = "company.com"
+project_types = ["Personal", "Team", "Company"]
 
 [logging]
 level = "debug"
@@ -338,10 +360,10 @@ level = "debug"
 ### Production Configuration
 
 ```toml
-api_key = "sk-ant-api03-..."
-data_dir = "/var/lib/project-tracker/data"
+data_dir = "/var/lib/project-tracker"
 jira_url = "https://jira.company.com/browse/"
 default_email_domain = "company.com"
+project_types = ["Personal", "Team", "Company"]
 
 [logging]
 level = "warn"
@@ -350,14 +372,103 @@ level = "warn"
 ### Atlassian Jira Cloud
 
 ```toml
-api_key = "sk-ant-api03-..."
-data_dir = "~/.project-tracker/data"
+data_dir = "~/.project-tracker"
 jira_url = "https://yourcompany.atlassian.net/browse/"
 default_email_domain = "yourcompany.com"
+project_types = ["Personal", "Team", "Company"]
 
 [logging]
 level = "info"
 ```
+
+## MCP Server Configuration
+
+Project Tracker includes a Model Context Protocol (MCP) server that allows AI assistants like Claude Desktop to access your project data.
+
+### MCP Server Setup
+
+The MCP server is configured separately from the Project Tracker application itself. The server uses the same database and configuration as the CLI and GUI applications.
+
+#### Building the MCP Server
+
+```bash
+# Build the MCP server binary
+cargo build --release --bin track-mcp
+
+# The binary will be at: target/release/track-mcp
+```
+
+#### Configuring Claude Desktop
+
+To use the MCP server with Claude Desktop, add the following to your Claude Desktop configuration file:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "project-tracker": {
+      "command": "/absolute/path/to/project-tracker/target/release/track-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+**Important:** Replace `/absolute/path/to/project-tracker` with the actual absolute path to your project directory.
+
+#### MCP Server Configuration Options
+
+The MCP server uses the same configuration file as the CLI and GUI (`~/.project-tracker/config.toml`). It specifically uses:
+
+- **`data_dir`** - Location of the SQLite database
+- **`jira_url`** - For generating Jira ticket links in responses
+- **`default_email_domain`** - For validating email addresses
+- **`project_types`** - For project type validation
+
+#### MCP Server Environment
+
+The MCP server:
+- Reads configuration from `~/.project-tracker/config.toml`
+- Accesses the same SQLite database as CLI and GUI
+- Logs to stderr (stdout is reserved for MCP protocol)
+- Runs as a separate process managed by Claude Desktop
+
+#### Testing MCP Server
+
+To verify the MCP server is working:
+
+1. Build and configure the server as described above
+2. Restart Claude Desktop
+3. Look for "project-tracker" in the Claude Desktop MCP servers list
+4. Try a test prompt: "Show me all my projects"
+
+Claude should be able to list your projects, create new ones, manage people, and interact with all Project Tracker data.
+
+#### Troubleshooting MCP Server
+
+**Server not appearing in Claude Desktop:**
+- Verify the path to `track-mcp` binary is absolute and correct
+- Check that the binary has execute permissions: `chmod +x target/release/track-mcp`
+- Restart Claude Desktop after configuration changes
+- Check Claude Desktop logs for error messages
+
+**Server starts but can't access data:**
+- Verify `~/.project-tracker/config.toml` exists and is valid
+- Check that `data_dir` in the config points to the correct location
+- Ensure the database file exists: `~/.project-tracker/project-tracker.db`
+- Verify file permissions allow the MCP server to read/write the database
+
+**Database locked errors:**
+- SQLite databases can only have one writer at a time
+- Close the GUI application if it's running
+- Ensure no other processes are accessing the database
+
+For more information about available MCP tools, see the main [README.md](../README.md#mcp-server-mode).
+
+---
 
 ## Troubleshooting
 
@@ -389,15 +500,15 @@ level = "info"
 - Set the `HOME` environment variable
 - Use the `--config` flag with an absolute path
 
-### API Key Not Working
+### Database Access Errors
 
-**Cause:** Invalid or missing API key.
+**Cause:** Database file cannot be accessed or is locked.
 
 **Solution:**
-- Verify the API key is correct (starts with `sk-ant-`)
-- Ensure there are no extra spaces or newlines
-- Check that you've saved the file after editing
-- Verify the key is still valid in the Anthropic console
+- Verify the database file exists at `<data_dir>/project-tracker.db`
+- Check file permissions (must be readable and writable)
+- Ensure only one application instance is writing to the database
+- Close the GUI if using the CLI or MCP server simultaneously
 
 ## Future Configuration Options
 
@@ -441,11 +552,12 @@ include_timestamps = true
 ### Version 0.1.0 (Current)
 
 Initial configuration system:
-- `api_key` - Anthropic API key for Claude integration
 - `data_dir` - Data storage directory (SQLite database location)
 - `jira_url` - Base URL for Jira ticket links
 - `default_email_domain` - Default email domain for organization
+- `project_types` - Available project types
 - `logging.level` - Log level configuration
+- MCP server support for Claude Desktop integration
 
 ## See Also
 

@@ -7,16 +7,13 @@
 //! This library provides the core functionality for Project Tracker,
 //! a project and resource management application for engineering managers.
 
-pub mod agent;
 pub mod config;
 pub mod core;
 pub mod db;
 pub mod storage;
-pub mod tools;
 pub mod utils;
 
 // Re-export commonly used types
-pub use agent::ClaudeAgent;
 pub use config::Config;
 pub use core::{Deadline, Employee, Initiative, Stakeholder};
 pub use db::{Milestone, Person, Project};

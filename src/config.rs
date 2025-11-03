@@ -10,9 +10,6 @@ use std::path::{Path, PathBuf};
 /// Application configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    /// Anthropic API key
-    pub api_key: String,
-
     /// Data storage directory
     pub data_dir: String,
 
@@ -165,7 +162,6 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            api_key: "your-anthropic-api-key-here".to_string(),
             data_dir: "~/.project-tracker".to_string(),
             jira_url: default_jira_url(),
             default_email_domain: default_email_domain(),
@@ -183,7 +179,6 @@ mod tests {
     #[test]
     fn test_config_default() {
         let config = Config::default();
-        assert_eq!(config.api_key, "your-anthropic-api-key-here");
         assert_eq!(config.data_dir, "~/.project-tracker");
         assert_eq!(config.logging.level, "info");
     }
@@ -192,7 +187,6 @@ mod tests {
     fn test_config_serialize() {
         let config = Config::default();
         let toml = toml::to_string(&config).unwrap();
-        assert!(toml.contains("api_key"));
         assert!(toml.contains("data_dir"));
     }
 
@@ -205,7 +199,6 @@ mod tests {
         config.save(&config_path).unwrap();
 
         let loaded = Config::load(&config_path).unwrap();
-        assert_eq!(loaded.api_key, config.api_key);
         assert_eq!(loaded.data_dir, config.data_dir);
     }
 

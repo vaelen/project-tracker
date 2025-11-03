@@ -5,7 +5,7 @@
 //! CLI command handlers
 
 use clap::Subcommand;
-use claude_tracker::{Config, Result};
+use project_tracker::{Config, Result};
 
 #[derive(Subcommand)]
 pub enum ProjectAction {

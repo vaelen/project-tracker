@@ -7,7 +7,7 @@
 //! Command-line interface for Project Tracker.
 
 use clap::{Parser, Subcommand};
-use claude_tracker::{Config, Result};
+use project_tracker::{Config, Result};
 use std::path::PathBuf;
 
 mod cli;
