@@ -9,6 +9,10 @@ authors = ["Andrew C. Young <andrew@vaelen.org>"]
 edition = "2021"
 license = "MIT"
 
+[[bin]]
+name = "project-tracker"
+path = "src/main.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

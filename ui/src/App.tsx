@@ -17,6 +17,7 @@ import {
   TeamOutlined,
   ClockCircleOutlined,
   FileTextOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { ProjectList } from './components/ProjectList';
 import { ProjectDetail } from './components/ProjectDetail';
@@ -25,6 +26,7 @@ import { PersonList } from './components/PersonList';
 import { PersonDetail } from './components/PersonDetail';
 import { PersonForm } from './components/PersonForm';
 import { DeadlinesList } from './components/DeadlinesList';
+import { About } from './components/About';
 import type { Project, Person, Milestone } from './types';
 
 const { Header, Content, Sider } = Layout;
@@ -132,6 +134,7 @@ function App() {
     { key: '2', icon: <TeamOutlined />, label: 'People' },
     { key: '3', icon: <ClockCircleOutlined />, label: 'Deadlines' },
     { key: '4', icon: <FileTextOutlined />, label: 'Reports' },
+    { key: '5', icon: <InfoCircleOutlined />, label: 'About' },
   ];
 
   const renderContent = () => {
@@ -225,6 +228,11 @@ function App() {
           onViewMilestone={handleViewMilestoneFromDeadlines}
         />
       );
+    }
+
+    // About section
+    if (selectedMenu === '5') {
+      return <About />;
     }
 
     // Other sections - coming soon
