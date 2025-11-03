@@ -1,0 +1,72 @@
+# Rust build outputs
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Node.js (frontend only)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Frontend build outputs
+ui/dist/
+ui/build/
+*.tsbuildinfo
+
+# Coverage reports
+coverage/
+*.profraw
+*.profdata
+tarpaulin-report.html
+cobertura.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+Thumbs.db
+
+# Test files
+*.test.js.snap
+
+# Logs
+logs/
+*.log
+
+# Package manager locks (keep package-lock.json but ignore yarn/pnpm)
+yarn.lock
+pnpm-lock.yaml
+
+# User data directory
+data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Tauri artifacts
+src-tauri/target/
+src-tauri/WixTools/
+
+# Built executables and bundles
+track
+track-*
+*.exe
+*.app
+*.dmg
+*.deb
+*.AppImage

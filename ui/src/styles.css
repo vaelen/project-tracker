@@ -1,0 +1,24 @@
+/**
+ * Copyright 2025 Andrew C. Young <andrew@vaelen.org>
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+}
+
+/* Ensure full height layout */
+#root {
+  min-height: 100vh;
+}
