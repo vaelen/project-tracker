@@ -1,8 +1,8 @@
-# Claude Tracker - Development Documentation
+# Project Tracker - Development Documentation
 
 ## Project Overview
 
-Claude Tracker is a project and resource management application designed for software engineering managers at large tech companies. It integrates a Claude Agent using the Claude Agent SDK to provide intelligent assistance for tracking projects, initiatives, deadlines, employee information, and stakeholder interactions.
+Project Tracker is a project and resource management application designed for software engineering managers at large tech companies. It integrates a Claude Agent using the Claude Agent SDK to provide intelligent assistance for tracking projects, initiatives, deadlines, employee information, and stakeholder interactions.
 
 ## Core Requirements
 
@@ -65,7 +65,7 @@ The application tracks:
 
 ### Code Structure
 ```
-claude-tracker/
+project-tracker/
 ├── src/                    # Rust source code
 │   ├── main.rs            # CLI entry point
 │   ├── lib.rs             # Library root

@@ -1,10 +1,10 @@
-# Claude Tracker
+# Project Tracker
 
 An intelligent project and resource management application for software engineering managers, powered by Claude AI.
 
 ## Overview
 
-Claude Tracker helps engineering managers track projects, initiatives, deadlines, employee information, and stakeholder interactions. It features an embedded Claude Agent that provides intelligent assistance through natural language interactions.
+Project Tracker helps engineering managers track projects, initiatives, deadlines, employee information, and stakeholder interactions. It features an embedded Claude Agent that provides intelligent assistance through natural language interactions.
 
 ## Features
 
@@ -20,7 +20,7 @@ Claude Tracker helps engineering managers track projects, initiatives, deadlines
 
 ## Interfaces
 
-Claude Tracker provides two ways to interact with your data:
+Project Tracker provides two ways to interact with your data:
 
 - **Native GUI**: Tauri-based graphical interface (React frontend) for interactive use
 - **CLI**: Full-featured command-line interface for automation and scripting
@@ -114,11 +114,11 @@ cd src-tauri && cargo tauri build
 
 ## Configuration
 
-On first run, Claude Tracker will create a configuration file at `~/.claude-tracker/config.toml`. You need to edit this file and add your Anthropic API key.
+On first run, Project Tracker will create a configuration file at `~/.project-tracker/config.toml`. You need to edit this file and add your Anthropic API key.
 
 ### Configuration File Location
 
-Default: `~/.claude-tracker/config.toml`
+Default: `~/.project-tracker/config.toml`
 
 You can override the configuration file location using the `--config` or `-c` flag:
 
@@ -133,7 +133,7 @@ track --config /path/to/config.toml projects list
 api_key = "your-anthropic-api-key-here"
 
 # Data Storage Directory
-data_dir = "~/.claude-tracker/data"
+data_dir = "~/.project-tracker/data"
 
 # Logging Configuration
 [logging]
@@ -146,7 +146,7 @@ For detailed information about all configuration options, see [docs/config.md](d
 
 ### Data Storage
 
-All data is stored in `~/.claude-tracker/data/` by default (configurable via `data_dir` in config). The application will automatically create the following subdirectories:
+All data is stored in `~/.project-tracker/data/` by default (configurable via `data_dir` in config). The application will automatically create the following subdirectories:
 
 - `projects/` - Project information
 - `employees/` - Employee records
@@ -190,7 +190,7 @@ track --config /path/to/config.toml projects list
 
 ### Project Structure
 ```
-claude-tracker/
+project-tracker/
 ├── src/                    # Rust source (shared library + CLI)
 │   ├── main.rs            # CLI entry point
 │   ├── lib.rs             # Shared library root

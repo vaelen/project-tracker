@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 [package]
-name = "claude-tracker"
+name = "project-tracker"
 version = "0.1.0"
 authors = ["Andrew C. Young <andrew@vaelen.org>"]
 edition = "2021"
 license = "MIT"
 description = "An intelligent project and resource management application for software engineering managers, powered by Claude AI"
-homepage = "https://github.com/vaelen/claude-tracker"
-repository = "https://github.com/vaelen/claude-tracker"
+homepage = "https://github.com/vaelen/project-tracker"
+repository = "https://github.com/vaelen/project-tracker"
 keywords = ["project-management", "resource-allocation", "claude-ai", "engineering-management"]
 categories = ["command-line-utilities"]
 
