@@ -530,11 +530,18 @@ mod tests {
     use super::*;
     use crate::db;
 
-    #[test]
-    fn test_create_and_find_project() {
+    fn setup_test_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         db::schema::initialize_schema(&conn).unwrap();
+        db::schema::apply_migrations(&conn).unwrap();
+        conn
+    }
 
+    // Project CRUD tests
+
+    #[test]
+    fn test_create_and_find_project() {
+        let conn = setup_test_db();
         let repo = ProjectRepository::new(&conn);
         let project = Project::new("Test Project".to_string());
 
@@ -542,13 +549,92 @@ mod tests {
 
         let found = repo.find_by_id(&project.id).unwrap().unwrap();
         assert_eq!(found.name, "Test Project");
+        assert_eq!(found.id, project.id);
     }
 
     #[test]
-    fn test_add_milestone() {
-        let conn = Connection::open_in_memory().unwrap();
-        db::schema::initialize_schema(&conn).unwrap();
+    fn test_find_nonexistent_project() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let fake_id = Uuid::new_v4();
 
+        let result = repo.find_by_id(&fake_id).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_list_all_projects() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+
+        let project1 = Project::new("Alpha Project".to_string());
+        let project2 = Project::new("Beta Project".to_string());
+        repo.create(&project1).unwrap();
+        repo.create(&project2).unwrap();
+
+        let projects = repo.list_all().unwrap();
+        assert_eq!(projects.len(), 2);
+        // Should be sorted by name
+        assert_eq!(projects[0].name, "Alpha Project");
+        assert_eq!(projects[1].name, "Beta Project");
+    }
+
+    #[test]
+    fn test_update_project() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let mut project = Project::new("Original Name".to_string());
+        repo.create(&project).unwrap();
+
+        project.name = "Updated Name".to_string();
+        project.description = Some("New description".to_string());
+        repo.update(&project).unwrap();
+
+        let found = repo.find_by_id(&project.id).unwrap().unwrap();
+        assert_eq!(found.name, "Updated Name");
+        assert_eq!(found.description, Some("New description".to_string()));
+    }
+
+    #[test]
+    fn test_update_nonexistent_project() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+
+        let result = repo.update(&project);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_delete_project() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        repo.delete(&project.id).unwrap();
+
+        let found = repo.find_by_id(&project.id).unwrap();
+        assert!(found.is_none());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_project() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let fake_id = Uuid::new_v4();
+
+        let result = repo.delete(&fake_id);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    // Milestone tests
+
+    #[test]
+    fn test_add_milestone() {
+        let conn = setup_test_db();
         let repo = ProjectRepository::new(&conn);
         let project = Project::new("Test Project".to_string());
         repo.create(&project).unwrap();
@@ -559,5 +645,362 @@ mod tests {
         let milestones = repo.get_milestones(&project.id).unwrap();
         assert_eq!(milestones.len(), 1);
         assert_eq!(milestones[0].name, "Milestone 1");
+        assert_eq!(milestones[0].number, 1);
+    }
+
+    #[test]
+    fn test_get_milestones_empty() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestones = repo.get_milestones(&project.id).unwrap();
+        assert_eq!(milestones.len(), 0);
+    }
+
+    #[test]
+    fn test_update_milestone() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let mut milestone = Milestone::new(project.id, 1, "Original Name".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        milestone.name = "Updated Name".to_string();
+        milestone.description = Some("New description".to_string());
+        repo.update_milestone(&milestone).unwrap();
+
+        let milestones = repo.get_milestones(&project.id).unwrap();
+        assert_eq!(milestones[0].name, "Updated Name");
+        assert_eq!(milestones[0].description, Some("New description".to_string()));
+    }
+
+    #[test]
+    fn test_update_nonexistent_milestone() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Test Milestone".to_string());
+        let result = repo.update_milestone(&milestone);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_delete_milestone() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        repo.delete_milestone(&milestone.id).unwrap();
+
+        let milestones = repo.get_milestones(&project.id).unwrap();
+        assert_eq!(milestones.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_nonexistent_milestone() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let fake_id = Uuid::new_v4();
+
+        let result = repo.delete_milestone(&fake_id);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_delete_project_cascades_to_milestones() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        repo.delete(&project.id).unwrap();
+
+        // Milestones should be deleted via cascade
+        let milestones = repo.get_milestones(&project.id).unwrap();
+        assert_eq!(milestones.len(), 0);
+    }
+
+    // Stakeholder tests
+
+    #[test]
+    fn test_add_stakeholder() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let mut stakeholder = ProjectStakeholder::new(project.id, "alice@example.com".to_string());
+        stakeholder.role = Some("Lead".to_string());
+        repo.add_stakeholder(&project.id, &stakeholder).unwrap();
+
+        let stakeholders = repo.get_stakeholders(&project.id).unwrap();
+        assert_eq!(stakeholders.len(), 1);
+        assert_eq!(stakeholders[0].stakeholder_email, "alice@example.com");
+        assert_eq!(stakeholders[0].role, Some("Lead".to_string()));
+    }
+
+    #[test]
+    fn test_update_stakeholder() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let mut stakeholder = ProjectStakeholder::new(project.id, "alice@example.com".to_string());
+        stakeholder.role = Some("Member".to_string());
+        repo.add_stakeholder(&project.id, &stakeholder).unwrap();
+
+        stakeholder.role = Some("Lead".to_string());
+        repo.update_stakeholder(&project.id, &stakeholder).unwrap();
+
+        let stakeholders = repo.get_stakeholders(&project.id).unwrap();
+        assert_eq!(stakeholders[0].role, Some("Lead".to_string()));
+    }
+
+    #[test]
+    fn test_remove_stakeholder() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let stakeholder = ProjectStakeholder::new(project.id, "alice@example.com".to_string());
+        repo.add_stakeholder(&project.id, &stakeholder).unwrap();
+
+        repo.remove_stakeholder(&project.id, "alice@example.com").unwrap();
+
+        let stakeholders = repo.get_stakeholders(&project.id).unwrap();
+        assert_eq!(stakeholders.len(), 0);
+    }
+
+    // Project Notes tests
+
+    #[test]
+    fn test_add_project_note() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let note = ProjectNote::new(project.id, "Test Note".to_string(), "Note body".to_string());
+        repo.add_project_note(&note).unwrap();
+
+        let notes = repo.get_project_notes(&project.id).unwrap();
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].title, "Test Note");
+        assert_eq!(notes[0].body, "Note body");
+    }
+
+    #[test]
+    fn test_update_project_note() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let mut note = ProjectNote::new(project.id, "Original Title".to_string(), "Original body".to_string());
+        repo.add_project_note(&note).unwrap();
+
+        note.title = "Updated Title".to_string();
+        note.body = "Updated body".to_string();
+        repo.update_project_note(&note).unwrap();
+
+        let notes = repo.get_project_notes(&project.id).unwrap();
+        assert_eq!(notes[0].title, "Updated Title");
+        assert_eq!(notes[0].body, "Updated body");
+    }
+
+    #[test]
+    fn test_delete_project_note() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let note = ProjectNote::new(project.id, "Test Note".to_string(), "Note body".to_string());
+        repo.add_project_note(&note).unwrap();
+
+        repo.delete_project_note(&note.id).unwrap();
+
+        let notes = repo.get_project_notes(&project.id).unwrap();
+        assert_eq!(notes.len(), 0);
+    }
+
+    // Milestone Notes tests
+
+    #[test]
+    fn test_add_milestone_note() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let note = MilestoneNote::new(milestone.id, "Test Note".to_string(), "Note body".to_string());
+        repo.add_milestone_note(&note).unwrap();
+
+        let notes = repo.get_milestone_notes(&milestone.id).unwrap();
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].title, "Test Note");
+    }
+
+    #[test]
+    fn test_update_milestone_note() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let mut note = MilestoneNote::new(milestone.id, "Original Title".to_string(), "Original body".to_string());
+        repo.add_milestone_note(&note).unwrap();
+
+        note.title = "Updated Title".to_string();
+        repo.update_milestone_note(&note).unwrap();
+
+        let notes = repo.get_milestone_notes(&milestone.id).unwrap();
+        assert_eq!(notes[0].title, "Updated Title");
+    }
+
+    #[test]
+    fn test_delete_milestone_note() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let note = MilestoneNote::new(milestone.id, "Test Note".to_string(), "Note body".to_string());
+        repo.add_milestone_note(&note).unwrap();
+
+        repo.delete_milestone_note(&note.id).unwrap();
+
+        let notes = repo.get_milestone_notes(&milestone.id).unwrap();
+        assert_eq!(notes.len(), 0);
+    }
+
+    // Stakeholder Notes tests
+
+    #[test]
+    fn test_add_stakeholder_note() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let stakeholder = ProjectStakeholder::new(project.id, "alice@example.com".to_string());
+        repo.add_stakeholder(&project.id, &stakeholder).unwrap();
+
+        let note = StakeholderNote::new(
+            project.id,
+            "alice@example.com".to_string(),
+            "Test Note".to_string(),
+            "Note body".to_string(),
+        );
+        repo.add_stakeholder_note(&note).unwrap();
+
+        let notes = repo.get_stakeholder_notes(&project.id, "alice@example.com").unwrap();
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].title, "Test Note");
+    }
+
+    #[test]
+    fn test_update_stakeholder_note() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let stakeholder = ProjectStakeholder::new(project.id, "alice@example.com".to_string());
+        repo.add_stakeholder(&project.id, &stakeholder).unwrap();
+
+        let mut note = StakeholderNote::new(
+            project.id,
+            "alice@example.com".to_string(),
+            "Original Title".to_string(),
+            "Original body".to_string(),
+        );
+        repo.add_stakeholder_note(&note).unwrap();
+
+        note.title = "Updated Title".to_string();
+        repo.update_stakeholder_note(&note).unwrap();
+
+        let notes = repo.get_stakeholder_notes(&project.id, "alice@example.com").unwrap();
+        assert_eq!(notes[0].title, "Updated Title");
+    }
+
+    #[test]
+    fn test_delete_stakeholder_note() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let stakeholder = ProjectStakeholder::new(project.id, "alice@example.com".to_string());
+        repo.add_stakeholder(&project.id, &stakeholder).unwrap();
+
+        let note = StakeholderNote::new(
+            project.id,
+            "alice@example.com".to_string(),
+            "Test Note".to_string(),
+            "Note body".to_string(),
+        );
+        repo.add_stakeholder_note(&note).unwrap();
+
+        repo.delete_stakeholder_note(&note.id).unwrap();
+
+        let notes = repo.get_stakeholder_notes(&project.id, "alice@example.com").unwrap();
+        assert_eq!(notes.len(), 0);
     }
 }

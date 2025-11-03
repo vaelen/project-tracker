@@ -61,8 +61,8 @@ mod tests {
             .unwrap();
         assert_eq!(fk_enabled, 1);
 
-        // Verify schema exists
+        // Verify schema exists and migrations applied
         let version = schema::get_schema_version(&conn).unwrap();
-        assert_eq!(version, 1);
+        assert_eq!(version, 3); // Current version after all migrations
     }
 }

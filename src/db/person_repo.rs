@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 use super::models::Person;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
 
@@ -150,11 +150,18 @@ mod tests {
     use super::*;
     use crate::db;
 
-    #[test]
-    fn test_create_and_find_person() {
+    fn setup_test_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         db::schema::initialize_schema(&conn).unwrap();
+        db::schema::apply_migrations(&conn).unwrap();
+        conn
+    }
 
+    // Person CRUD tests
+
+    #[test]
+    fn test_create_and_find_person() {
+        let conn = setup_test_db();
         let repo = PersonRepository::new(&conn);
         let person = Person::new("alice@example.com".to_string(), "Alice Smith".to_string());
 
@@ -166,18 +173,220 @@ mod tests {
     }
 
     #[test]
-    fn test_search_by_name() {
-        let conn = Connection::open_in_memory().unwrap();
-        db::schema::initialize_schema(&conn).unwrap();
-
+    fn test_find_nonexistent_person() {
+        let conn = setup_test_db();
         let repo = PersonRepository::new(&conn);
+
+        let result = repo.find_by_email("nonexistent@example.com").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_create_person_with_all_fields() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        let mut person = Person::new("alice@example.com".to_string(), "Alice Smith".to_string());
+        person.team = Some("Engineering".to_string());
+        person.notes = Some("Team lead".to_string());
+
+        repo.create(&person).unwrap();
+
+        let found = repo.find_by_email("alice@example.com").unwrap().unwrap();
+        assert_eq!(found.team, Some("Engineering".to_string()));
+        assert_eq!(found.notes, Some("Team lead".to_string()));
+    }
+
+    #[test]
+    fn test_list_all_people() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
         repo.create(&Person::new("alice@example.com".to_string(), "Alice Smith".to_string()))
             .unwrap();
         repo.create(&Person::new("bob@example.com".to_string(), "Bob Jones".to_string()))
+            .unwrap();
+        repo.create(&Person::new("charlie@example.com".to_string(), "Charlie Brown".to_string()))
+            .unwrap();
+
+        let people = repo.list_all().unwrap();
+        assert_eq!(people.len(), 3);
+        // Should be sorted by name
+        assert_eq!(people[0].name, "Alice Smith");
+        assert_eq!(people[1].name, "Bob Jones");
+        assert_eq!(people[2].name, "Charlie Brown");
+    }
+
+    #[test]
+    fn test_list_all_people_empty() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        let people = repo.list_all().unwrap();
+        assert_eq!(people.len(), 0);
+    }
+
+    #[test]
+    fn test_update_person() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+        let mut person = Person::new("alice@example.com".to_string(), "Alice Smith".to_string());
+        repo.create(&person).unwrap();
+
+        person.name = "Alice Johnson".to_string();
+        person.team = Some("Product".to_string());
+        person.notes = Some("Promoted to manager".to_string());
+        repo.update(&person).unwrap();
+
+        let found = repo.find_by_email("alice@example.com").unwrap().unwrap();
+        assert_eq!(found.name, "Alice Johnson");
+        assert_eq!(found.team, Some("Product".to_string()));
+        assert_eq!(found.notes, Some("Promoted to manager".to_string()));
+    }
+
+    #[test]
+    fn test_update_nonexistent_person() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+        let person = Person::new("nonexistent@example.com".to_string(), "Test Person".to_string());
+
+        let result = repo.update(&person);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_delete_person() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+        let person = Person::new("alice@example.com".to_string(), "Alice Smith".to_string());
+        repo.create(&person).unwrap();
+
+        repo.delete("alice@example.com").unwrap();
+
+        let found = repo.find_by_email("alice@example.com").unwrap();
+        assert!(found.is_none());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_person() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        let result = repo.delete("nonexistent@example.com");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    // Search tests
+
+    #[test]
+    fn test_search_by_name() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        repo.create(&Person::new("alice@example.com".to_string(), "Alice Smith".to_string()))
+            .unwrap();
+        repo.create(&Person::new("bob@example.com".to_string(), "Bob Jones".to_string()))
+            .unwrap();
+        repo.create(&Person::new("charlie@example.com".to_string(), "Charlie Brown".to_string()))
             .unwrap();
 
         let results = repo.search_by_name("Alice").unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].name, "Alice Smith");
+    }
+
+    #[test]
+    fn test_search_by_name_partial() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        repo.create(&Person::new("alice@example.com".to_string(), "Alice Smith".to_string()))
+            .unwrap();
+        repo.create(&Person::new("alicia@example.com".to_string(), "Alicia Jones".to_string()))
+            .unwrap();
+        repo.create(&Person::new("bob@example.com".to_string(), "Bob Alice".to_string()))
+            .unwrap();
+
+        let results = repo.search_by_name("Ali").unwrap();
+        assert_eq!(results.len(), 3); // Matches Alice, Alicia, and "Bob Alice"
+    }
+
+    #[test]
+    fn test_search_by_name_case_insensitive() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        repo.create(&Person::new("alice@example.com".to_string(), "Alice Smith".to_string()))
+            .unwrap();
+
+        let results = repo.search_by_name("alice").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "Alice Smith");
+    }
+
+    #[test]
+    fn test_search_by_name_no_results() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        repo.create(&Person::new("alice@example.com".to_string(), "Alice Smith".to_string()))
+            .unwrap();
+
+        let results = repo.search_by_name("Bob").unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_search_by_name_limit() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        // Create 25 people with similar names
+        for i in 0..25 {
+            let person = Person::new(
+                format!("person{}@example.com", i),
+                format!("Test Person {}", i)
+            );
+            repo.create(&person).unwrap();
+        }
+
+        let results = repo.search_by_name("Test Person").unwrap();
+        // Should limit to 20 results
+        assert_eq!(results.len(), 20);
+    }
+
+    // Manager relationship tests
+
+    #[test]
+    fn test_create_person_with_manager() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        // Create manager first
+        let manager = Person::new("manager@example.com".to_string(), "Manager".to_string());
+        repo.create(&manager).unwrap();
+
+        // Create employee with manager
+        let mut employee = Person::new("employee@example.com".to_string(), "Employee".to_string());
+        employee.manager = Some("manager@example.com".to_string());
+        repo.create(&employee).unwrap();
+
+        let found = repo.find_by_email("employee@example.com").unwrap().unwrap();
+        assert_eq!(found.manager, Some("manager@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_create_duplicate_email_fails() {
+        let conn = setup_test_db();
+        let repo = PersonRepository::new(&conn);
+
+        let person1 = Person::new("alice@example.com".to_string(), "Alice Smith".to_string());
+        repo.create(&person1).unwrap();
+
+        let person2 = Person::new("alice@example.com".to_string(), "Alice Jones".to_string());
+        let result = repo.create(&person2);
+        assert!(result.is_err());
     }
 }

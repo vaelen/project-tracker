@@ -294,6 +294,8 @@ mod tests {
     use super::*;
     use rusqlite::Connection;
 
+    // Schema initialization tests
+
     #[test]
     fn test_initialize_schema() {
         let conn = Connection::open_in_memory().unwrap();
@@ -312,7 +314,22 @@ mod tests {
         assert!(tables.contains(&"projects".to_string()));
         assert!(tables.contains(&"milestones".to_string()));
         assert!(tables.contains(&"project_stakeholders".to_string()));
+        assert!(tables.contains(&"project_notes".to_string()));
+        assert!(tables.contains(&"milestone_notes".to_string()));
+        assert!(tables.contains(&"stakeholder_notes".to_string()));
         assert!(tables.contains(&"schema_version".to_string()));
+    }
+
+    #[test]
+    fn test_initialize_schema_idempotent() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        // Initialize twice - should not error
+        initialize_schema(&conn).unwrap();
+        initialize_schema(&conn).unwrap();
+
+        let version = get_schema_version(&conn).unwrap();
+        assert_eq!(version, 1);
     }
 
     #[test]
@@ -322,5 +339,183 @@ mod tests {
 
         let version = get_schema_version(&conn).unwrap();
         assert_eq!(version, 1);
+    }
+
+    // Migration tests
+
+    #[test]
+    fn test_apply_migrations() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+
+        // Initial version should be 1
+        let version = get_schema_version(&conn).unwrap();
+        assert_eq!(version, 1);
+
+        // Apply migrations
+        apply_migrations(&conn).unwrap();
+
+        // Should now be at version 3 (latest)
+        let version = get_schema_version(&conn).unwrap();
+        assert_eq!(version, 3);
+    }
+
+    #[test]
+    fn test_apply_migrations_idempotent() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+
+        // Apply migrations twice - should not error
+        apply_migrations(&conn).unwrap();
+        apply_migrations(&conn).unwrap();
+
+        let version = get_schema_version(&conn).unwrap();
+        assert_eq!(version, 3);
+    }
+
+    #[test]
+    fn test_migration_to_version_2_adds_type_column() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+
+        // Apply migrations
+        apply_migrations(&conn).unwrap();
+
+        // Verify type column exists in projects table
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(projects)")
+            .unwrap()
+            .query_map([], |row| row.get(1))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert!(columns.contains(&"type".to_string()));
+
+        // Verify default value works
+        let project_id = uuid::Uuid::new_v4();
+        conn.execute(
+            "INSERT INTO projects (id, name, created_at, updated_at) VALUES (?1, 'Test', datetime('now'), datetime('now'))",
+            [project_id.to_string()],
+        ).unwrap();
+
+        let project_type: String = conn
+            .query_row(
+                "SELECT type FROM projects WHERE id = ?1",
+                [project_id.to_string()],
+                |row| row.get(0),
+            )
+            .unwrap();
+
+        assert_eq!(project_type, "Personal");
+    }
+
+    #[test]
+    fn test_migration_to_version_3_adds_updated_at_to_notes() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+        apply_migrations(&conn).unwrap();
+
+        // Verify updated_at column exists in project_notes table
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(project_notes)")
+            .unwrap()
+            .query_map([], |row| row.get(1))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert!(columns.contains(&"updated_at".to_string()));
+
+        // Verify updated_at column exists in milestone_notes table
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(milestone_notes)")
+            .unwrap()
+            .query_map([], |row| row.get(1))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert!(columns.contains(&"updated_at".to_string()));
+
+        // Verify updated_at column exists in stakeholder_notes table
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(stakeholder_notes)")
+            .unwrap()
+            .query_map([], |row| row.get(1))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert!(columns.contains(&"updated_at".to_string()));
+    }
+
+    // Foreign key tests
+
+    #[test]
+    fn test_foreign_keys_enabled_by_default() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        // Enable foreign keys (normally done by open_database)
+        conn.execute("PRAGMA foreign_keys = ON", []).unwrap();
+
+        initialize_schema(&conn).unwrap();
+
+        // Verify foreign keys are enabled
+        let fk_enabled: i32 = conn
+            .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(fk_enabled, 1);
+    }
+
+    #[test]
+    fn test_cascade_delete_milestones() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute("PRAGMA foreign_keys = ON", []).unwrap();
+        initialize_schema(&conn).unwrap();
+
+        let project_id = uuid::Uuid::new_v4();
+        let milestone_id = uuid::Uuid::new_v4();
+
+        // Create project
+        conn.execute(
+            "INSERT INTO projects (id, name, type, created_at, updated_at) VALUES (?1, 'Test', 'Personal', datetime('now'), datetime('now'))",
+            [project_id.to_string()],
+        ).unwrap();
+
+        // Create milestone
+        conn.execute(
+            "INSERT INTO milestones (id, project_id, number, name, created_at, updated_at) VALUES (?1, ?2, 1, 'M1', datetime('now'), datetime('now'))",
+            [milestone_id.to_string(), project_id.to_string()],
+        ).unwrap();
+
+        // Delete project
+        conn.execute("DELETE FROM projects WHERE id = ?1", [project_id.to_string()]).unwrap();
+
+        // Verify milestone was deleted
+        let count: i32 = conn
+            .query_row("SELECT COUNT(*) FROM milestones WHERE id = ?1", [milestone_id.to_string()], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    // Index tests
+
+    #[test]
+    fn test_indexes_created() {
+        let conn = Connection::open_in_memory().unwrap();
+        initialize_schema(&conn).unwrap();
+
+        let indexes: Vec<String> = conn
+            .prepare("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert!(indexes.contains(&"idx_people_name".to_string()));
+        assert!(indexes.contains(&"idx_projects_name".to_string()));
+        assert!(indexes.contains(&"idx_milestones_due_date".to_string()));
     }
 }

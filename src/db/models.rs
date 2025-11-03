@@ -309,6 +309,8 @@ impl StakeholderNote {
 mod tests {
     use super::*;
 
+    // Person model tests
+
     #[test]
     fn test_person_new() {
         let person = Person::new(
@@ -320,7 +322,28 @@ mod tests {
         assert_eq!(person.name, "Alice Smith");
         assert!(person.team.is_none());
         assert!(person.manager.is_none());
+        assert!(person.notes.is_none());
+        // Check timestamps are set
+        assert!(person.created_at < Utc::now() + chrono::Duration::seconds(1));
+        assert!(person.updated_at < Utc::now() + chrono::Duration::seconds(1));
     }
+
+    #[test]
+    fn test_person_with_optional_fields() {
+        let mut person = Person::new(
+            "alice@example.com".to_string(),
+            "Alice Smith".to_string(),
+        );
+        person.team = Some("Engineering".to_string());
+        person.manager = Some("manager@example.com".to_string());
+        person.notes = Some("Team lead".to_string());
+
+        assert_eq!(person.team, Some("Engineering".to_string()));
+        assert_eq!(person.manager, Some("manager@example.com".to_string()));
+        assert_eq!(person.notes, Some("Team lead".to_string()));
+    }
+
+    // Project model tests
 
     #[test]
     fn test_project_new() {
@@ -329,7 +352,42 @@ mod tests {
         assert_eq!(project.name, "Test Project");
         assert!(project.description.is_none());
         assert!(project.jira_initiative.is_none());
+        assert_eq!(project.project_type, "Personal");
+        assert!(project.due_date.is_none());
+        // Check timestamps are set
+        assert!(project.created_at < Utc::now() + chrono::Duration::seconds(1));
+        assert!(project.updated_at < Utc::now() + chrono::Duration::seconds(1));
     }
+
+    #[test]
+    fn test_project_with_all_fields() {
+        let mut project = Project::new("Test Project".to_string());
+        project.description = Some("A test project".to_string());
+        project.project_type = "Team".to_string();
+        project.requirements_owner = Some("owner@example.com".to_string());
+        project.technical_lead = Some("lead@example.com".to_string());
+        project.manager = Some("manager@example.com".to_string());
+        project.due_date = Some(Utc::now());
+        project.jira_initiative = Some("PROJ-123".to_string());
+
+        assert_eq!(project.description, Some("A test project".to_string()));
+        assert_eq!(project.project_type, "Team");
+        assert!(project.requirements_owner.is_some());
+        assert!(project.technical_lead.is_some());
+        assert!(project.manager.is_some());
+        assert!(project.due_date.is_some());
+        assert_eq!(project.jira_initiative, Some("PROJ-123".to_string()));
+    }
+
+    #[test]
+    fn test_project_unique_ids() {
+        let project1 = Project::new("Project 1".to_string());
+        let project2 = Project::new("Project 2".to_string());
+
+        assert_ne!(project1.id, project2.id);
+    }
+
+    // Milestone model tests
 
     #[test]
     fn test_milestone_new() {
@@ -343,6 +401,160 @@ mod tests {
         assert_eq!(milestone.project_id, project_id);
         assert_eq!(milestone.number, 1);
         assert_eq!(milestone.name, "Alpha Release");
+        assert!(milestone.description.is_none());
         assert!(milestone.jira_epic.is_none());
+        assert!(milestone.due_date.is_none());
+        // Check timestamps are set
+        assert!(milestone.created_at < Utc::now() + chrono::Duration::seconds(1));
+        assert!(milestone.updated_at < Utc::now() + chrono::Duration::seconds(1));
+    }
+
+    #[test]
+    fn test_milestone_with_optional_fields() {
+        let project_id = Uuid::new_v4();
+        let mut milestone = Milestone::new(
+            project_id,
+            1,
+            "Alpha Release".to_string(),
+        );
+        milestone.description = Some("First major release".to_string());
+        milestone.technical_lead = Some("lead@example.com".to_string());
+        milestone.design_doc_url = Some("https://docs.example.com/design".to_string());
+        milestone.due_date = Some(Utc::now());
+        milestone.jira_epic = Some("EPIC-123".to_string());
+
+        assert_eq!(milestone.description, Some("First major release".to_string()));
+        assert!(milestone.technical_lead.is_some());
+        assert!(milestone.design_doc_url.is_some());
+        assert!(milestone.due_date.is_some());
+        assert_eq!(milestone.jira_epic, Some("EPIC-123".to_string()));
+    }
+
+    // ProjectStakeholder model tests
+
+    #[test]
+    fn test_project_stakeholder_new() {
+        let project_id = Uuid::new_v4();
+        let stakeholder = ProjectStakeholder::new(
+            project_id,
+            "stakeholder@example.com".to_string(),
+        );
+
+        assert_eq!(stakeholder.project_id, project_id);
+        assert_eq!(stakeholder.stakeholder_email, "stakeholder@example.com");
+        assert!(stakeholder.role.is_none());
+        assert!(stakeholder.created_at < Utc::now() + chrono::Duration::seconds(1));
+    }
+
+    #[test]
+    fn test_project_stakeholder_with_role() {
+        let project_id = Uuid::new_v4();
+        let mut stakeholder = ProjectStakeholder::new(
+            project_id,
+            "stakeholder@example.com".to_string(),
+        );
+        stakeholder.role = Some("Product Owner".to_string());
+
+        assert_eq!(stakeholder.role, Some("Product Owner".to_string()));
+    }
+
+    // ProjectNote model tests
+
+    #[test]
+    fn test_project_note_new() {
+        let project_id = Uuid::new_v4();
+        let note = ProjectNote::new(
+            project_id,
+            "Test Note".to_string(),
+            "This is a test note.".to_string(),
+        );
+
+        assert_eq!(note.project_id, project_id);
+        assert_eq!(note.title, "Test Note");
+        assert_eq!(note.body, "This is a test note.");
+        assert!(note.created_at < Utc::now() + chrono::Duration::seconds(1));
+        assert!(note.updated_at < Utc::now() + chrono::Duration::seconds(1));
+    }
+
+    #[test]
+    fn test_project_note_unique_ids() {
+        let project_id = Uuid::new_v4();
+        let note1 = ProjectNote::new(
+            project_id,
+            "Note 1".to_string(),
+            "Body 1".to_string(),
+        );
+        let note2 = ProjectNote::new(
+            project_id,
+            "Note 2".to_string(),
+            "Body 2".to_string(),
+        );
+
+        assert_ne!(note1.id, note2.id);
+    }
+
+    // MilestoneNote model tests
+
+    #[test]
+    fn test_milestone_note_new() {
+        let milestone_id = Uuid::new_v4();
+        let note = MilestoneNote::new(
+            milestone_id,
+            "Milestone Note".to_string(),
+            "This is a milestone note.".to_string(),
+        );
+
+        assert_eq!(note.milestone_id, milestone_id);
+        assert_eq!(note.title, "Milestone Note");
+        assert_eq!(note.body, "This is a milestone note.");
+        assert!(note.created_at < Utc::now() + chrono::Duration::seconds(1));
+        assert!(note.updated_at < Utc::now() + chrono::Duration::seconds(1));
+    }
+
+    // StakeholderNote model tests
+
+    #[test]
+    fn test_stakeholder_note_new() {
+        let project_id = Uuid::new_v4();
+        let note = StakeholderNote::new(
+            project_id,
+            "stakeholder@example.com".to_string(),
+            "Stakeholder Note".to_string(),
+            "This is a stakeholder note.".to_string(),
+        );
+
+        assert_eq!(note.project_id, project_id);
+        assert_eq!(note.stakeholder_email, "stakeholder@example.com");
+        assert_eq!(note.title, "Stakeholder Note");
+        assert_eq!(note.body, "This is a stakeholder note.");
+        assert!(note.created_at < Utc::now() + chrono::Duration::seconds(1));
+        assert!(note.updated_at < Utc::now() + chrono::Duration::seconds(1));
+    }
+
+    // Serialization tests
+
+    #[test]
+    fn test_person_serialization() {
+        let person = Person::new(
+            "alice@example.com".to_string(),
+            "Alice Smith".to_string(),
+        );
+
+        let json = serde_json::to_string(&person).unwrap();
+        let deserialized: Person = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(person.email, deserialized.email);
+        assert_eq!(person.name, deserialized.name);
+    }
+
+    #[test]
+    fn test_project_serialization() {
+        let project = Project::new("Test Project".to_string());
+
+        let json = serde_json::to_string(&project).unwrap();
+        let deserialized: Project = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(project.id, deserialized.id);
+        assert_eq!(project.name, deserialized.name);
     }
 }
