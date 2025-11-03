@@ -18,7 +18,6 @@ import {
   ClockCircleOutlined,
   MessageOutlined,
   FileTextOutlined,
-  SettingOutlined,
 } from '@ant-design/icons';
 import { ProjectList } from './components/ProjectList';
 import { ProjectDetail } from './components/ProjectDetail';
@@ -26,7 +25,8 @@ import { ProjectForm } from './components/ProjectForm';
 import { PersonList } from './components/PersonList';
 import { PersonDetail } from './components/PersonDetail';
 import { PersonForm } from './components/PersonForm';
-import type { Project, Person } from './types';
+import { DeadlinesList } from './components/DeadlinesList';
+import type { Project, Person, Milestone } from './types';
 
 const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
@@ -107,13 +107,33 @@ function App() {
     setSelectedPerson(null);
   };
 
+  const handleViewProjectFromDeadlines = (project: Project) => {
+    setSelectedMenu('1');
+    setSelectedProject(project);
+    setViewMode('detail');
+  };
+
+  const handleViewMilestoneFromDeadlines = async (milestone: Milestone) => {
+    // Find the project for this milestone and navigate to it
+    const { ProjectService } = await import('./services/projectService');
+    try {
+      const project = await ProjectService.getProject(milestone.project_id);
+      if (project) {
+        setSelectedMenu('1');
+        setSelectedProject(project);
+        setViewMode('detail');
+      }
+    } catch (error) {
+      console.error('Failed to load project for milestone:', error);
+    }
+  };
+
   const menuItems = [
     { key: '1', icon: <ProjectOutlined />, label: 'Projects' },
     { key: '2', icon: <TeamOutlined />, label: 'People' },
     { key: '3', icon: <ClockCircleOutlined />, label: 'Deadlines' },
     { key: '4', icon: <MessageOutlined />, label: 'Claude AI' },
     { key: '5', icon: <FileTextOutlined />, label: 'Reports' },
-    { key: '6', icon: <SettingOutlined />, label: 'Configuration' },
   ];
 
   const renderContent = () => {
@@ -197,6 +217,16 @@ function App() {
             />
           );
       }
+    }
+
+    // Deadlines section
+    if (selectedMenu === '3') {
+      return (
+        <DeadlinesList
+          onViewProject={handleViewProjectFromDeadlines}
+          onViewMilestone={handleViewMilestoneFromDeadlines}
+        />
+      );
     }
 
     // Other sections - coming soon

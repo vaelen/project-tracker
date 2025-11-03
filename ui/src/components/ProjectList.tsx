@@ -87,6 +87,29 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       fixed: 'left',
     },
     {
+      title: 'Due Date',
+      dataIndex: 'due_date',
+      key: 'due_date',
+      width: 120,
+      render: formatDate,
+      sorter: (a, b) => {
+        const dateA = a.due_date ? new Date(a.due_date).getTime() : 0;
+        const dateB = b.due_date ? new Date(b.due_date).getTime() : 0;
+        return dateA - dateB;
+      },
+    },
+    {
+      title: 'Jira Initiative',
+      dataIndex: 'jira_initiative',
+      key: 'jira_initiative',
+      width: 150,
+      render: (ticket) => ticket ? (
+        <Link href={`${jiraBaseUrl}${ticket}`} target="_blank">
+          <LinkOutlined /> {ticket}
+        </Link>
+      ) : '-',
+    },
+    {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
@@ -109,29 +132,6 @@ export const ProjectList: React.FC<ProjectListProps> = ({
       width: 180,
       ellipsis: true,
       render: (email) => email || '-',
-    },
-    {
-      title: 'Due Date',
-      dataIndex: 'due_date',
-      key: 'due_date',
-      width: 120,
-      render: formatDate,
-      sorter: (a, b) => {
-        const dateA = a.due_date ? new Date(a.due_date).getTime() : 0;
-        const dateB = b.due_date ? new Date(b.due_date).getTime() : 0;
-        return dateA - dateB;
-      },
-    },
-    {
-      title: 'Jira Initiative',
-      dataIndex: 'jira_initiative',
-      key: 'jira_initiative',
-      width: 150,
-      render: (ticket) => ticket ? (
-        <Link href={`${jiraBaseUrl}${ticket}`} target="_blank">
-          <LinkOutlined /> {ticket}
-        </Link>
-      ) : '-',
     },
     {
       title: 'Actions',

@@ -24,6 +24,10 @@ pub struct Config {
     #[serde(default = "default_email_domain")]
     pub default_email_domain: String,
 
+    /// Available project types
+    #[serde(default = "default_project_types")]
+    pub project_types: Vec<String>,
+
     /// Logging configuration
     #[serde(default)]
     pub logging: LoggingConfig,
@@ -35,6 +39,14 @@ fn default_jira_url() -> String {
 
 fn default_email_domain() -> String {
     "company.com".to_string()
+}
+
+fn default_project_types() -> Vec<String> {
+    vec![
+        "Personal".to_string(),
+        "Team".to_string(),
+        "Company".to_string(),
+    ]
 }
 
 /// Logging configuration
@@ -157,6 +169,7 @@ impl Default for Config {
             data_dir: "~/.claude-tracker/data".to_string(),
             jira_url: default_jira_url(),
             default_email_domain: default_email_domain(),
+            project_types: default_project_types(),
             logging: LoggingConfig::default(),
         }
     }

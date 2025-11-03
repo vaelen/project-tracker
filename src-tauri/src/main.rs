@@ -175,6 +175,11 @@ async fn get_default_email_domain(state: State<'_, AppState>) -> Result<String, 
 }
 
 #[tauri::command]
+async fn get_project_types(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    Ok(state.config.project_types.clone())
+}
+
+#[tauri::command]
 async fn chat_with_claude(message: String) -> Result<String, String> {
     // TODO: Implement Claude chat
     Ok(format!("Claude response to: {}", message))
@@ -395,6 +400,7 @@ fn main() {
             delete_person,
             get_jira_url,
             get_default_email_domain,
+            get_project_types,
             chat_with_claude,
         ])
         .run(tauri::generate_context!())
