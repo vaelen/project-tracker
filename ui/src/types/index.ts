@@ -28,32 +28,25 @@ export interface Project {
   updated_at: string;
 }
 
-export interface ProjectNote {
+export interface Note {
   id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectNote extends Note {
   project_id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface MilestoneNote {
-  id: string;
+export interface MilestoneNote extends Note {
   milestone_id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface StakeholderNote {
-  id: string;
+export interface StakeholderNote extends Note {
   project_id: string;
   stakeholder_email: string;
-  title: string;
-  body: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface Milestone {

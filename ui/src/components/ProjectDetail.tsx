@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, Descriptions, Button, Space, Tag, Table, message, Typography, Spin, Modal, Collapse } from 'antd';
+import { Card, Descriptions, Button, Space, Table, message, Typography, Spin, Modal } from 'antd';
 import { EditOutlined, ArrowLeftOutlined, LinkOutlined, PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { ProjectService } from '../services/projectService';
@@ -17,10 +17,9 @@ import { StakeholderForm } from './StakeholderForm';
 import { NoteForm } from './NoteForm';
 import { NoteList } from './NoteList';
 import { NoteViewModal } from './NoteViewModal';
-import type { Project, Milestone, ProjectStakeholder, Person, ProjectNote, MilestoneNote, StakeholderNote } from '../types';
+import type { Project, Milestone, ProjectStakeholder, Person, Note, ProjectNote, MilestoneNote, StakeholderNote } from '../types';
 
 const { Title, Link } = Typography;
-const { Panel } = Collapse;
 
 interface ProjectDetailProps {
   projectId: string;
@@ -47,9 +46,9 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
 
   // Note modal state
   const [showNoteModal, setShowNoteModal] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<ProjectNote | undefined>(undefined);
+  const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
   const [showNoteViewModal, setShowNoteViewModal] = useState(false);
-  const [noteForView, setNoteForView] = useState<ProjectNote | null>(null);
+  const [noteForView, setNoteForView] = useState<Note | null>(null);
 
   // Detail view modals
   const [showMilestoneDetailModal, setShowMilestoneDetailModal] = useState(false);
@@ -207,12 +206,12 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
     setShowNoteModal(true);
   };
 
-  const handleViewNote = (note: ProjectNote) => {
+  const handleViewNote = (note: Note) => {
     setNoteForView(note);
     setShowNoteViewModal(true);
   };
 
-  const handleEditNote = (note: ProjectNote) => {
+  const handleEditNote = (note: Note) => {
     setSelectedNote(note);
     setShowNoteViewModal(false);
     setShowNoteModal(true);

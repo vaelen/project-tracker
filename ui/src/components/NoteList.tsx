@@ -7,14 +7,7 @@
 import { Table, Button, Space, Modal, message } from 'antd';
 import { EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-
-interface Note {
-  id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { Note } from '../types';
 
 interface NoteListProps {
   notes: Note[];

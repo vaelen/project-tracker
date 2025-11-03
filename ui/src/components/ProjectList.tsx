@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, message, Modal, Tag, Typography } from 'antd';
+import { Table, Button, Space, message, Modal, Typography } from 'antd';
 import { PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { ProjectService } from '../services/projectService';

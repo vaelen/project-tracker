@@ -5,7 +5,7 @@
 // Prevents additional console window on Windows in release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use claude_tracker::{
+use project_tracker::{
     config::Config,
     db::{self, Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote},
 };
