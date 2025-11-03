@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-//! Claude Tracker - Core Library
+//! Project Tracker - Core Library
 //!
-//! This library provides the core functionality for Claude Tracker,
+//! This library provides the core functionality for Project Tracker,
 //! a project and resource management application for engineering managers.
 
 pub mod agent;

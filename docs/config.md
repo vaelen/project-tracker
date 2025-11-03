@@ -2,7 +2,7 @@
 
 ## Overview
 
-Claude Tracker uses a TOML-based configuration file to manage application settings. The configuration file allows you to customize the application's behavior, set API credentials, configure data storage locations, and control logging output.
+Project Tracker uses a TOML-based configuration file to manage application settings. The configuration file allows you to customize the application's behavior, set API credentials, configure data storage locations, and control logging output.
 
 ## Configuration File Location
 
@@ -31,7 +31,7 @@ The configuration file uses TOML (Tom's Obvious, Minimal Language) format. TOML 
 ### Example Configuration
 
 ```toml
-# Claude Tracker Configuration File
+# Project Tracker Configuration File
 
 # Anthropic API Key
 # Required for Claude AI integration
@@ -231,7 +231,7 @@ level = "info"
 
 ## Environment Variables
 
-Currently, Claude Tracker does not use environment variables for configuration. All configuration is done through the TOML configuration file.
+Currently, Project Tracker does not use environment variables for configuration. All configuration is done through the TOML configuration file.
 
 ## Configuration Validation
 

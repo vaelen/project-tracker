@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-//! Claude Tracker CLI
+//! Project Tracker CLI
 //!
-//! Command-line interface for Claude Tracker.
+//! Command-line interface for Project Tracker.
 
 use clap::{Parser, Subcommand};
 use claude_tracker::{Config, Result};
@@ -16,7 +16,7 @@ mod cli;
 #[command(name = "track")]
 #[command(author = "Andrew C. Young <andrew@vaelen.org>")]
 #[command(version)]
-#[command(about = "Claude Tracker - Intelligent project and resource management", long_about = None)]
+#[command(about = "Project Tracker - Intelligent project and resource management", long_about = None)]
 struct Cli {
     /// Path to configuration file
     #[arg(short, long, global = true)]
@@ -79,7 +79,7 @@ async fn main() -> Result<()> {
         env_logger::Env::default().default_filter_or(&config.logging.level)
     ).init();
 
-    log::info!("Claude Tracker v{}", env!("CARGO_PKG_VERSION"));
+    log::info!("Project Tracker v{}", env!("CARGO_PKG_VERSION"));
     log::debug!("Config loaded from: {}",
         cli.config.as_ref()
             .map(|p| p.display().to_string())

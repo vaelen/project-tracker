@@ -1,7 +1,7 @@
 {
   "name": "claude-tracker-ui",
   "version": "0.1.0",
-  "description": "Frontend for Claude Tracker",
+  "description": "Frontend for Project Tracker",
   "type": "module",
   "scripts": {
     "dev": "vite",

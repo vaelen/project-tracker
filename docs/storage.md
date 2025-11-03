@@ -2,7 +2,7 @@
 
 ## Overview
 
-Claude Tracker uses SQLite for data storage, providing reliable data integrity, efficient querying, and built-in transaction support. All data is stored in a single SQLite database file located within a configurable data directory.
+Project Tracker uses SQLite for data storage, providing reliable data integrity, efficient querying, and built-in transaction support. All data is stored in a single SQLite database file located within a configurable data directory.
 
 ## Storage Location
 
