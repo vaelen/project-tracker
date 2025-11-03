@@ -8,8 +8,6 @@
 //! a project and resource management application for engineering managers.
 
 pub mod agent;
-pub mod auth;
-pub mod chat;
 pub mod config;
 pub mod core;
 pub mod db;

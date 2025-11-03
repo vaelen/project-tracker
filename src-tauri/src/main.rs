@@ -179,62 +179,6 @@ async fn get_project_types(state: State<'_, AppState>) -> Result<Vec<String>, St
     Ok(state.config.project_types.clone())
 }
 
-//Auth and Chat commands
-
-#[tauri::command]
-async fn check_auth_status() -> Result<claude_tracker::auth::AuthStatus, String> {
-    Ok(claude_tracker::auth::get_auth_status())
-}
-
-#[tauri::command]
-async fn open_auth_url() -> Result<(), String> {
-    // Open the auth URL in the default browser
-    let url = claude_tracker::auth::AUTH_URL;
-    open::that(url).map_err(|e| format!("Failed to open browser: {}", e))?;
-    Ok(())
-}
-
-#[tauri::command]
-async fn save_credentials(session_key: String, organization_id: Option<String>) -> Result<(), String> {
-    let credentials = claude_tracker::auth::Credentials {
-        session_key,
-        organization_id,
-    };
-
-    credentials.save().map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-async fn delete_credentials() -> Result<(), String> {
-    claude_tracker::auth::Credentials::delete().map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[tauri::command]
-async fn send_chat_message(messages: Vec<claude_tracker::chat::Message>) -> Result<String, String> {
-    // Load credentials
-    let credentials = claude_tracker::auth::Credentials::load()
-        .map_err(|e| format!("Not authenticated: {}", e))?;
-
-    // Create chat client
-    let client = claude_tracker::chat::ChatClient::new(&credentials);
-
-    // Send message
-    let response = client.send_message(messages)
-        .await
-        .map_err(|e| format!("Chat error: {}", e))?;
-
-    Ok(response)
-}
-
-#[tauri::command]
-async fn chat_with_claude(message: String) -> Result<String, String> {
-    // This is kept for backwards compatibility but now uses the new chat system
-    let messages = vec![claude_tracker::chat::Message::user(message)];
-    send_chat_message(messages).await
-}
-
 // Stakeholder commands
 
 #[tauri::command]
@@ -402,7 +346,7 @@ fn main() {
 
     // Load configuration
     let config = Config::load_or_default().expect("Failed to load configuration");
-    config.ensure_data_dirs().expect("Failed to create data directories");
+    config.ensure_data_dir().expect("Failed to create data directory");
 
     // Open database
     let db_path = config.database_path().expect("Failed to get database path");
@@ -451,12 +395,6 @@ fn main() {
             get_jira_url,
             get_default_email_domain,
             get_project_types,
-            check_auth_status,
-            open_auth_url,
-            save_credentials,
-            delete_credentials,
-            send_chat_message,
-            chat_with_claude,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

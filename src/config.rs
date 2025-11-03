@@ -142,7 +142,7 @@ impl Config {
     }
 
     /// Ensure data directory exists
-    pub fn ensure_data_dirs(&self) -> Result<()> {
+    pub fn ensure_data_dir(&self) -> Result<()> {
         let data_dir = self.data_dir_path()?;
         fs::create_dir_all(&data_dir)
             .with_context(|| format!("Failed to create data directory: {}", data_dir.display()))?;
@@ -166,7 +166,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             api_key: "your-anthropic-api-key-here".to_string(),
-            data_dir: "~/.project-tracker/data".to_string(),
+            data_dir: "~/.project-tracker".to_string(),
             jira_url: default_jira_url(),
             default_email_domain: default_email_domain(),
             project_types: default_project_types(),
@@ -184,7 +184,7 @@ mod tests {
     fn test_config_default() {
         let config = Config::default();
         assert_eq!(config.api_key, "your-anthropic-api-key-here");
-        assert_eq!(config.data_dir, "~/.project-tracker/data");
+        assert_eq!(config.data_dir, "~/.project-tracker");
         assert_eq!(config.logging.level, "info");
     }
 
@@ -223,18 +223,14 @@ mod tests {
     }
 
     #[test]
-    fn test_ensure_data_dirs() {
+    fn test_ensure_data_dir() {
         let dir = tempdir().unwrap();
         let mut config = Config::default();
         config.data_dir = dir.path().to_string_lossy().to_string();
 
-        config.ensure_data_dirs().unwrap();
+        config.ensure_data_dir().unwrap();
 
-        // Check that subdirectories were created
-        assert!(dir.path().join("projects").exists());
-        assert!(dir.path().join("employees").exists());
-        assert!(dir.path().join("deadlines").exists());
-        assert!(dir.path().join("notes").exists());
-        assert!(dir.path().join("reports").exists());
+        // Check that data directory was created
+        assert!(dir.path().exists());
     }
 }

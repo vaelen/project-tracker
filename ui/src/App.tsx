@@ -16,7 +16,6 @@ import {
   ProjectOutlined,
   TeamOutlined,
   ClockCircleOutlined,
-  MessageOutlined,
   FileTextOutlined,
 } from '@ant-design/icons';
 import { ProjectList } from './components/ProjectList';
@@ -26,7 +25,6 @@ import { PersonList } from './components/PersonList';
 import { PersonDetail } from './components/PersonDetail';
 import { PersonForm } from './components/PersonForm';
 import { DeadlinesList } from './components/DeadlinesList';
-import { ChatInterface } from './components/ChatInterface';
 import type { Project, Person, Milestone } from './types';
 
 const { Header, Content, Sider } = Layout;
@@ -133,8 +131,7 @@ function App() {
     { key: '1', icon: <ProjectOutlined />, label: 'Projects' },
     { key: '2', icon: <TeamOutlined />, label: 'People' },
     { key: '3', icon: <ClockCircleOutlined />, label: 'Deadlines' },
-    { key: '4', icon: <MessageOutlined />, label: 'Claude AI' },
-    { key: '5', icon: <FileTextOutlined />, label: 'Reports' },
+    { key: '4', icon: <FileTextOutlined />, label: 'Reports' },
   ];
 
   const renderContent = () => {
@@ -228,11 +225,6 @@ function App() {
           onViewMilestone={handleViewMilestoneFromDeadlines}
         />
       );
-    }
-
-    // Claude AI Chat section
-    if (selectedMenu === '4') {
-      return <ChatInterface />;
     }
 
     // Other sections - coming soon

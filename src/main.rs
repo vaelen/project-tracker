@@ -33,25 +33,10 @@ enum Commands {
         #[command(subcommand)]
         action: cli::ProjectAction,
     },
-    /// Manage employees
-    Employees {
+    /// Manage people
+    People {
         #[command(subcommand)]
-        action: cli::EmployeeAction,
-    },
-    /// Manage deadlines
-    Deadlines {
-        #[command(subcommand)]
-        action: cli::DeadlineAction,
-    },
-    /// Manage initiatives
-    Initiatives {
-        #[command(subcommand)]
-        action: cli::InitiativeAction,
-    },
-    /// Manage stakeholders
-    Stakeholders {
-        #[command(subcommand)]
-        action: cli::StakeholderAction,
+        action: cli::PeopleAction,
     },
     /// Generate reports
     Report {
@@ -59,8 +44,6 @@ enum Commands {
         #[arg(short, long, default_value = "markdown")]
         format: String,
     },
-    /// Interactive mode with Claude AI
-    Chat,
 }
 
 #[tokio::main]
@@ -90,17 +73,13 @@ async fn main() -> Result<()> {
     );
     log::debug!("Data directory: {}", config.data_dir);
 
-    // Ensure data directories exist
-    config.ensure_data_dirs()?;
+    // Ensure data directory exists
+    config.ensure_data_dir()?;
 
     match cli.command {
         Commands::Projects { action } => cli::handle_projects(action, &config).await?,
-        Commands::Employees { action } => cli::handle_employees(action, &config).await?,
-        Commands::Deadlines { action } => cli::handle_deadlines(action, &config).await?,
-        Commands::Initiatives { action } => cli::handle_initiatives(action, &config).await?,
-        Commands::Stakeholders { action } => cli::handle_stakeholders(action, &config).await?,
+        Commands::People { action } => cli::handle_people(action, &config).await?,
         Commands::Report { format } => cli::handle_report(&format, &config).await?,
-        Commands::Chat => cli::handle_chat(&config).await?,
     }
 
     Ok(())

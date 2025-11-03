@@ -20,50 +20,14 @@ pub enum ProjectAction {
 }
 
 #[derive(Subcommand)]
-pub enum EmployeeAction {
-    /// List all employees
+pub enum PeopleAction {
+    /// List all people
     List,
-    /// Add a new employee
+    /// Add a new person
     Add { name: String },
-    /// Remove an employee
+    /// Remove a person
     Remove { id: String },
-    /// Show employee details
-    Show { id: String },
-}
-
-#[derive(Subcommand)]
-pub enum DeadlineAction {
-    /// List all deadlines
-    List,
-    /// Add a new deadline
-    Add { title: String, date: String },
-    /// Remove a deadline
-    Remove { id: String },
-    /// Show deadline details
-    Show { id: String },
-}
-
-#[derive(Subcommand)]
-pub enum InitiativeAction {
-    /// List all initiatives
-    List,
-    /// Add a new initiative
-    Add { name: String },
-    /// Remove an initiative
-    Remove { id: String },
-    /// Show initiative details
-    Show { id: String },
-}
-
-#[derive(Subcommand)]
-pub enum StakeholderAction {
-    /// List all stakeholders
-    List,
-    /// Add a new stakeholder
-    Add { name: String },
-    /// Remove a stakeholder
-    Remove { id: String },
-    /// Show stakeholder details
+    /// Show person details
     Show { id: String },
 }
 
@@ -73,39 +37,14 @@ pub async fn handle_projects(_action: ProjectAction, config: &Config) -> Result<
     Ok(())
 }
 
-pub async fn handle_employees(_action: EmployeeAction, config: &Config) -> Result<()> {
+pub async fn handle_people(_action: PeopleAction, config: &Config) -> Result<()> {
     log::debug!("Data directory: {}", config.data_dir);
-    println!("Employee management - coming soon");
-    Ok(())
-}
-
-pub async fn handle_deadlines(_action: DeadlineAction, config: &Config) -> Result<()> {
-    log::debug!("Data directory: {}", config.data_dir);
-    println!("Deadline management - coming soon");
-    Ok(())
-}
-
-pub async fn handle_initiatives(_action: InitiativeAction, config: &Config) -> Result<()> {
-    log::debug!("Data directory: {}", config.data_dir);
-    println!("Initiative management - coming soon");
-    Ok(())
-}
-
-pub async fn handle_stakeholders(_action: StakeholderAction, config: &Config) -> Result<()> {
-    log::debug!("Data directory: {}", config.data_dir);
-    println!("Stakeholder management - coming soon");
+    println!("People management - coming soon");
     Ok(())
 }
 
 pub async fn handle_report(_format: &str, config: &Config) -> Result<()> {
     log::debug!("Data directory: {}", config.data_dir);
     println!("Report generation - coming soon");
-    Ok(())
-}
-
-pub async fn handle_chat(config: &Config) -> Result<()> {
-    log::debug!("Data directory: {}", config.data_dir);
-    log::debug!("API key configured: {}", !config.api_key.is_empty() && config.api_key != "your-anthropic-api-key-here");
-    println!("Interactive Claude AI chat - coming soon");
     Ok(())
 }
