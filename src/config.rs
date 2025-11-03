@@ -82,12 +82,12 @@ impl Config {
         Ok(config)
     }
 
-    /// Get the default config file path (~/.claude-tracker/config.toml)
+    /// Get the default config file path (~/.project-tracker/config.toml)
     pub fn default_path() -> Result<PathBuf> {
         let home = dirs::home_dir()
             .context("Could not determine home directory")?;
 
-        Ok(home.join(".claude-tracker").join("config.toml"))
+        Ok(home.join(".project-tracker").join("config.toml"))
     }
 
     /// Load configuration from the default location or create a default config
@@ -158,7 +158,7 @@ impl Config {
     /// Get the database file path
     pub fn database_path(&self) -> Result<PathBuf> {
         let data_dir = self.data_dir_path()?;
-        Ok(data_dir.join("claude-tracker.db"))
+        Ok(data_dir.join("project-tracker.db"))
     }
 }
 
@@ -166,7 +166,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             api_key: "your-anthropic-api-key-here".to_string(),
-            data_dir: "~/.claude-tracker/data".to_string(),
+            data_dir: "~/.project-tracker/data".to_string(),
             jira_url: default_jira_url(),
             default_email_domain: default_email_domain(),
             project_types: default_project_types(),
@@ -184,7 +184,7 @@ mod tests {
     fn test_config_default() {
         let config = Config::default();
         assert_eq!(config.api_key, "your-anthropic-api-key-here");
-        assert_eq!(config.data_dir, "~/.claude-tracker/data");
+        assert_eq!(config.data_dir, "~/.project-tracker/data");
         assert_eq!(config.logging.level, "info");
     }
 

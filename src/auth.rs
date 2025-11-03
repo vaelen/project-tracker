@@ -18,11 +18,11 @@ pub struct Credentials {
 }
 
 impl Credentials {
-    /// Get the default credentials file path (~/.claude-tracker/credentials.json)
+    /// Get the default credentials file path (~/.project-tracker/credentials.json)
     pub fn default_path() -> Result<PathBuf> {
         let home = dirs::home_dir()
             .context("Could not determine home directory")?;
-        Ok(home.join(".claude-tracker").join("credentials.json"))
+        Ok(home.join(".project-tracker").join("credentials.json"))
     }
 
     /// Load credentials from the default location

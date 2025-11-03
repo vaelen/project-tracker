@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "identifier": "org.vaelen.claude-tracker",
+  "identifier": "org.vaelen.project-tracker",
   "productName": "Project Tracker",
   "version": "0.1.0",
   "build": {

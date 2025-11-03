@@ -9,7 +9,7 @@ Project Tracker uses a TOML-based configuration file to manage application setti
 ### Default Location
 
 ```
-~/.claude-tracker/config.toml
+~/.project-tracker/config.toml
 ```
 
 The configuration file is automatically created in this location on first run if it doesn't already exist.
@@ -41,7 +41,7 @@ api_key = "sk-ant-api03-..."
 # Data Storage Directory
 # Directory where all application data (including SQLite database) is stored
 # Supports tilde (~) expansion for home directory
-data_dir = "~/.claude-tracker/data"
+data_dir = "~/.project-tracker/data"
 
 # Jira Configuration
 # Base URL for Jira tickets (include trailing slash)
@@ -90,13 +90,13 @@ Path to the directory where all application data is stored.
 
 **Type:** String
 **Required:** Yes
-**Default:** `"~/.claude-tracker/data"`
-**Example:** `"/home/user/documents/claude-tracker-data"`
+**Default:** `"~/.project-tracker/data"`
+**Example:** `"/home/user/documents/project-tracker-data"`
 
 **Description:** All application data is stored in an SQLite database within this directory. The path supports tilde (`~`) expansion for the home directory.
 
 **Files Created:**
-- `claude-tracker.db` - SQLite database containing all application data
+- `project-tracker.db` - SQLite database containing all application data
 
 **Notes:**
 - The directory is created automatically if it doesn't exist
@@ -250,15 +250,15 @@ The application validates the configuration file on startup and will report erro
    track projects list
    ```
 
-2. The application will create `~/.claude-tracker/config.toml` with default values
+2. The application will create `~/.project-tracker/config.toml` with default values
 
 3. Edit the configuration file:
    ```bash
    # Linux/macOS
-   nano ~/.claude-tracker/config.toml
+   nano ~/.project-tracker/config.toml
 
    # Or use your preferred editor
-   code ~/.claude-tracker/config.toml
+   code ~/.project-tracker/config.toml
    ```
 
 4. Update the `api_key` with your actual Anthropic API key
@@ -271,10 +271,10 @@ You can maintain multiple configuration files for different environments or use 
 
 ```bash
 # Personal projects
-track --config ~/.claude-tracker/personal.toml projects list
+track --config ~/.project-tracker/personal.toml projects list
 
 # Work projects
-track --config ~/.claude-tracker/work.toml projects list
+track --config ~/.project-tracker/work.toml projects list
 
 # Testing
 track --config /tmp/test-config.toml projects list
@@ -297,7 +297,7 @@ track --config /tmp/test-config.toml projects list
 1. Create a template configuration file (`config.toml.template`):
    ```toml
    api_key = "REPLACE_WITH_YOUR_API_KEY"
-   data_dir = "~/.claude-tracker/data"
+   data_dir = "~/.project-tracker/data"
 
    [logging]
    level = "info"
@@ -305,7 +305,7 @@ track --config /tmp/test-config.toml projects list
 
 2. Add the real config to `.gitignore`:
    ```
-   ~/.claude-tracker/config.toml
+   ~/.project-tracker/config.toml
    config.toml
    *.secret.toml
    ```
@@ -318,7 +318,7 @@ track --config /tmp/test-config.toml projects list
 
 ```toml
 api_key = "sk-ant-api03-..."
-data_dir = "~/.claude-tracker/data"
+data_dir = "~/.project-tracker/data"
 jira_url = "https://jira.company.com/browse/"
 default_email_domain = "company.com"
 ```
@@ -327,7 +327,7 @@ default_email_domain = "company.com"
 
 ```toml
 api_key = "sk-ant-api03-..."
-data_dir = "/tmp/claude-tracker-dev"
+data_dir = "/tmp/project-tracker-dev"
 jira_url = "https://jira-dev.company.com/browse/"
 default_email_domain = "company.com"
 
@@ -339,7 +339,7 @@ level = "debug"
 
 ```toml
 api_key = "sk-ant-api03-..."
-data_dir = "/var/lib/claude-tracker/data"
+data_dir = "/var/lib/project-tracker/data"
 jira_url = "https://jira.company.com/browse/"
 default_email_domain = "company.com"
 
@@ -351,7 +351,7 @@ level = "warn"
 
 ```toml
 api_key = "sk-ant-api03-..."
-data_dir = "~/.claude-tracker/data"
+data_dir = "~/.project-tracker/data"
 jira_url = "https://yourcompany.atlassian.net/browse/"
 default_email_domain = "yourcompany.com"
 
@@ -415,7 +415,7 @@ retry_attempts = 3  # Number of retry attempts
 # Database Configuration (planned)
 [database]
 type = "sqlite"  # Future: support for databases
-path = "~/.claude-tracker/data.db"
+path = "~/.project-tracker/data.db"
 
 # UI Configuration (planned)
 [ui]

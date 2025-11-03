@@ -9,7 +9,7 @@ Project Tracker uses SQLite for data storage, providing reliable data integrity,
 ### Default Location
 
 ```
-~/.claude-tracker/data/claude-tracker.db
+~/.project-tracker/data/claude-tracker.db
 ```
 
 The database file is automatically created on first run if it doesn't exist. The location can be customized via the `data_dir` configuration option.
@@ -17,10 +17,10 @@ The database file is automatically created on first run if it doesn't exist. The
 ### Directory Structure
 
 ```
-~/.claude-tracker/
+~/.project-tracker/
 ├── config.toml           # Application configuration
 └── data/                 # Data storage directory (configurable)
-    └── claude-tracker.db # SQLite database
+    └── project-tracker.db # SQLite database
 ```
 
 ## Database Schema
@@ -267,29 +267,29 @@ The application performs additional validation:
 **1. File-based Backup**
 ```bash
 # Simple copy (when app is not running)
-cp ~/.claude-tracker/data/claude-tracker.db ~/.claude-tracker/backup.db
+cp ~/.project-tracker/data/claude-tracker.db ~/.claude-tracker/backup.db
 
 # Or create dated backups
-cp ~/.claude-tracker/data/claude-tracker.db \
-   ~/.claude-tracker/backups/backup-$(date +%Y%m%d).db
+cp ~/.project-tracker/data/claude-tracker.db \
+   ~/.project-tracker/backups/backup-$(date +%Y%m%d).db
 ```
 
 **2. SQLite Backup Command**
 ```bash
 # Online backup (safe while app is running)
-sqlite3 ~/.claude-tracker/data/claude-tracker.db \
-  ".backup ~/.claude-tracker/backup.db"
+sqlite3 ~/.project-tracker/data/claude-tracker.db \
+  ".backup ~/.project-tracker/backup.db"
 ```
 
 **3. Export to SQL**
 ```bash
 # Export entire database as SQL
-sqlite3 ~/.claude-tracker/data/claude-tracker.db \
-  .dump > claude-tracker-export.sql
+sqlite3 ~/.project-tracker/data/claude-tracker.db \
+  .dump > project-tracker-export.sql
 
 # Restore from SQL
-sqlite3 ~/.claude-tracker/data/claude-tracker-restored.db \
-  < claude-tracker-export.sql
+sqlite3 ~/.project-tracker/data/claude-tracker-restored.db \
+  < project-tracker-export.sql
 ```
 
 ### Version Control
@@ -381,7 +381,7 @@ fn migrate_to_version_2(conn: &Connection) -> Result<()> {
 
 ```bash
 # Check for processes using the database
-lsof ~/.claude-tracker/data/claude-tracker.db
+lsof ~/.project-tracker/data/claude-tracker.db
 ```
 
 ### Corruption
@@ -392,12 +392,12 @@ lsof ~/.claude-tracker/data/claude-tracker.db
 1. Restore from backup
 2. Try SQLite's integrity check:
    ```bash
-   sqlite3 ~/.claude-tracker/data/claude-tracker.db "PRAGMA integrity_check"
+   sqlite3 ~/.project-tracker/data/claude-tracker.db "PRAGMA integrity_check"
    ```
 3. Export and reimport:
    ```bash
-   sqlite3 ~/.claude-tracker/data/claude-tracker.db .dump | \
-     sqlite3 ~/.claude-tracker/data/repaired.db
+   sqlite3 ~/.project-tracker/data/claude-tracker.db .dump | \
+     sqlite3 ~/.project-tracker/data/repaired.db
    ```
 
 ### Foreign Key Violations
@@ -433,7 +433,7 @@ project_repo.create(&project)?;
 
 ```bash
 # Open database in SQLite shell
-sqlite3 ~/.claude-tracker/data/claude-tracker.db
+sqlite3 ~/.project-tracker/data/claude-tracker.db
 
 # Common commands:
 .tables                    # List all tables
@@ -447,7 +447,7 @@ SELECT * FROM people;     # Query data
 ### Database Statistics
 
 ```bash
-sqlite3 ~/.claude-tracker/data/claude-tracker.db << EOF
+sqlite3 ~/.project-tracker/data/claude-tracker.db << EOF
 SELECT 'People:' as table_name, COUNT(*) as count FROM people
 UNION ALL
 SELECT 'Projects:', COUNT(*) FROM projects
