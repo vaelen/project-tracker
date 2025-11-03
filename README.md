@@ -1,10 +1,10 @@
 # Project Tracker
 
-An intelligent project and resource management application for software engineering managers, powered by Claude AI.
+An intelligent project and resource management application for software engineering managers, with AI integration via Model Context Protocol (MCP).
 
 ## Overview
 
-Project Tracker helps engineering managers track projects, initiatives, deadlines, employee information, and stakeholder interactions. It features an embedded Claude Agent that provides intelligent assistance through natural language interactions.
+Project Tracker helps engineering managers track projects, initiatives, deadlines, employee information, and stakeholder interactions. It provides AI assistant integration through an MCP server that works with Claude Desktop and other MCP-compatible AI assistants.
 
 ## Features
 
@@ -20,24 +20,27 @@ Project Tracker helps engineering managers track projects, initiatives, deadline
 
 ## Interfaces
 
-Project Tracker provides two ways to interact with your data:
+Project Tracker provides three ways to interact with your data:
 
 - **Native GUI**: Tauri-based graphical interface (React frontend) for interactive use
 - **CLI**: Full-featured command-line interface for automation and scripting
+- **MCP Server**: AI assistant integration via Model Context Protocol for use with Claude Desktop
 
-Both interfaces share the same core Rust library, ensuring consistent behavior and zero code duplication.
+All interfaces share the same SQLite database, ensuring perfect data synchronization.
 
 ## Data Storage
 
-All data is stored in human-readable text formats:
-- **Markdown**: For notes, documentation, and reports
-- **TSV**: For structured data (projects, employees, allocations)
+All data is stored in a SQLite database:
+- **Single file database**: `~/.project-tracker/project-tracker.db`
+- **Structured data**: Projects, people, milestones, notes, and stakeholders
+- **Markdown rendering**: Notes support markdown formatting in the UI
+- **Schema versioning**: Database migrations for backwards compatibility
 
 This approach ensures your data is:
-- Version control friendly
-- Easy to backup and sync
-- Human readable and editable
-- Portable across systems
+- **Easy to backup**: Single file to copy or sync
+- **Reliable**: ACID transactions for data integrity
+- **Fast**: Efficient querying and indexing
+- **Portable**: Works across all platforms
 
 ## Requirements
 
@@ -114,7 +117,7 @@ cd src-tauri && cargo tauri build
 
 ## Configuration
 
-On first run, Project Tracker will create a configuration file at `~/.project-tracker/config.toml`. You need to edit this file and add your Anthropic API key.
+On first run, Project Tracker will create a configuration file at `~/.project-tracker/config.toml`. You can customize settings like Jira integration, email domain, and project types.
 
 ### Configuration File Location
 
@@ -130,32 +133,38 @@ track --config /path/to/config.toml projects list
 
 ```toml
 # Data Storage Directory
-data_dir = "~/.project-tracker/data"
+data_dir = "~/.project-tracker"
+
+# Jira Configuration
+jira_url = "https://jira.company.com/browse/"
+
+# Default email domain
+default_email_domain = "company.com"
+
+# Available project types
+project_types = ["Personal", "Team", "Company"]
 
 # Logging Configuration
 [logging]
 level = "info"  # Options: trace, debug, info, warn, error
 ```
 
-Get your Anthropic API key from: https://console.anthropic.com/
-
 For detailed information about all configuration options, see [docs/config.md](docs/config.md).
 
 ### Data Storage
 
-All data is stored in `~/.project-tracker/data/` by default (configurable via `data_dir` in config). The application will automatically create the following subdirectories:
+All data is stored in `~/.project-tracker/` by default (configurable via `data_dir` in config). The application will automatically create:
 
-- `projects/` - Project information
-- `employees/` - Employee records
-- `deadlines/` - Deadline tracking
-- `initiatives/` - Corporate initiatives
-- `stakeholders/` - Stakeholder information
-- `allocations/` - Resource allocations
-- `interactions/` - Stakeholder interactions
-- `notes/` - Notes and documentation
-- `reports/` - Generated reports
+- `project-tracker.db` - SQLite database containing all application data
+  - Projects and their metadata
+  - People (employees, stakeholders) and team information
+  - Milestones with due dates and tracking
+  - Notes with markdown support
+  - Project-stakeholder relationships
 
-For detailed information about data formats and storage structure, see [docs/storage.md](docs/storage.md).
+The database uses schema versioning with automatic migrations to ensure data integrity across application updates.
+
+For detailed information about the database schema and storage architecture, see [docs/storage.md](docs/storage.md).
 
 ## Usage
 
