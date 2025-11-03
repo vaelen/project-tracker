@@ -26,6 +26,7 @@ import { PersonList } from './components/PersonList';
 import { PersonDetail } from './components/PersonDetail';
 import { PersonForm } from './components/PersonForm';
 import { DeadlinesList } from './components/DeadlinesList';
+import { ChatInterface } from './components/ChatInterface';
 import type { Project, Person, Milestone } from './types';
 
 const { Header, Content, Sider } = Layout;
@@ -227,6 +228,11 @@ function App() {
           onViewMilestone={handleViewMilestoneFromDeadlines}
         />
       );
+    }
+
+    // Claude AI Chat section
+    if (selectedMenu === '4') {
+      return <ChatInterface />;
     }
 
     // Other sections - coming soon
