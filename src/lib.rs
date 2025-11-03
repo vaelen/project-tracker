@@ -8,15 +8,19 @@
 //! a project and resource management application for engineering managers.
 
 pub mod agent;
+pub mod config;
 pub mod core;
+pub mod db;
 pub mod storage;
 pub mod tools;
 pub mod utils;
 
 // Re-export commonly used types
-pub use core::{Project, Employee, Deadline, Initiative, Stakeholder};
-pub use storage::Storage;
 pub use agent::ClaudeAgent;
+pub use config::Config;
+pub use core::{Deadline, Employee, Initiative, Stakeholder};
+pub use db::{Milestone, Person, Project};
+pub use storage::Storage;
 
 /// Result type used throughout the library
 pub type Result<T> = anyhow::Result<T>;

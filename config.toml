@@ -1,0 +1,26 @@
+# Claude Tracker Configuration File
+# Copy this file to ~/.claude-tracker/config.toml and customize as needed
+
+# Anthropic API Key
+# Required for Claude AI integration
+# Get your API key from: https://console.anthropic.com/
+api_key = "your-anthropic-api-key-here"
+
+# Data Storage Directory
+# Directory where all application data (including SQLite database) is stored
+# Supports tilde (~) expansion for home directory
+data_dir = "~/.claude-tracker/data"
+
+# Jira Configuration
+# Base URL for Jira tickets (include trailing slash)
+# Ticket numbers (e.g., PROJ-123) will be appended to this URL
+jira_url = "https://jira.company.com/browse/"
+
+# Default email domain for your organization
+# When adding people, if only a name is provided, this domain will be suggested
+default_email_domain = "company.com"
+
+# Logging Configuration
+[logging]
+# Logging level: trace, debug, info, warn, error
+level = "info"

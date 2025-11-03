@@ -5,7 +5,7 @@
 //! CLI command handlers
 
 use clap::Subcommand;
-use claude_tracker::Result;
+use claude_tracker::{Config, Result};
 
 #[derive(Subcommand)]
 pub enum ProjectAction {
@@ -67,37 +67,45 @@ pub enum StakeholderAction {
     Show { id: String },
 }
 
-pub async fn handle_projects(_action: ProjectAction) -> Result<()> {
+pub async fn handle_projects(_action: ProjectAction, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
     println!("Project management - coming soon");
     Ok(())
 }
 
-pub async fn handle_employees(_action: EmployeeAction) -> Result<()> {
+pub async fn handle_employees(_action: EmployeeAction, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
     println!("Employee management - coming soon");
     Ok(())
 }
 
-pub async fn handle_deadlines(_action: DeadlineAction) -> Result<()> {
+pub async fn handle_deadlines(_action: DeadlineAction, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
     println!("Deadline management - coming soon");
     Ok(())
 }
 
-pub async fn handle_initiatives(_action: InitiativeAction) -> Result<()> {
+pub async fn handle_initiatives(_action: InitiativeAction, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
     println!("Initiative management - coming soon");
     Ok(())
 }
 
-pub async fn handle_stakeholders(_action: StakeholderAction) -> Result<()> {
+pub async fn handle_stakeholders(_action: StakeholderAction, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
     println!("Stakeholder management - coming soon");
     Ok(())
 }
 
-pub async fn handle_report(_format: &str) -> Result<()> {
+pub async fn handle_report(_format: &str, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
     println!("Report generation - coming soon");
     Ok(())
 }
 
-pub async fn handle_chat() -> Result<()> {
+pub async fn handle_chat(config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
+    log::debug!("API key configured: {}", !config.api_key.is_empty() && config.api_key != "your-anthropic-api-key-here");
     println!("Interactive Claude AI chat - coming soon");
     Ok(())
 }

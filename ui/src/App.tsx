@@ -5,16 +5,10 @@
  */
 
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import {
   Layout,
   Typography,
   Card,
-  Input,
-  Button,
-  List,
-  Space,
-  Alert,
   Menu,
   theme,
 } from 'antd';
@@ -22,64 +16,202 @@ import {
   ProjectOutlined,
   TeamOutlined,
   ClockCircleOutlined,
-  RocketOutlined,
-  UserOutlined,
   MessageOutlined,
   FileTextOutlined,
-  PlusOutlined,
-  ReloadOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
+import { ProjectList } from './components/ProjectList';
+import { ProjectDetail } from './components/ProjectDetail';
+import { ProjectForm } from './components/ProjectForm';
+import { PersonList } from './components/PersonList';
+import { PersonDetail } from './components/PersonDetail';
+import { PersonForm } from './components/PersonForm';
+import type { Project, Person } from './types';
 
 const { Header, Content, Sider } = Layout;
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
+
+type ViewMode = 'list' | 'detail' | 'create' | 'edit';
 
 function App() {
-  const [projects, setProjects] = useState<string[]>([]);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [message, setMessage] = useState('');
   const [selectedMenu, setSelectedMenu] = useState('1');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { colorBgContainer },
   } = theme.useToken();
 
-  const loadProjects = async () => {
-    try {
-      const result = await invoke<string[]>('list_projects');
-      setProjects(result);
-    } catch (error) {
-      console.error('Failed to load projects:', error);
-    }
+  const handleViewProject = (project: Project) => {
+    setSelectedProject(project);
+    setViewMode('detail');
   };
 
-  const createProject = async () => {
-    if (!newProjectName.trim()) return;
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setViewMode('edit');
+  };
 
-    try {
-      const result = await invoke<string>('create_project', { name: newProjectName });
-      setMessage(result);
-      setNewProjectName('');
-      loadProjects();
-    } catch (error) {
-      console.error('Failed to create project:', error);
-    }
+  const handleCreateProject = () => {
+    setSelectedProject(null);
+    setViewMode('create');
+  };
+
+  const handleSaveProject = () => {
+    setViewMode('list');
+    setSelectedProject(null);
+  };
+
+  const handleCancelProject = () => {
+    setViewMode('list');
+    setSelectedProject(null);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedProject(null);
+  };
+
+  const handleEditFromDetail = () => {
+    setViewMode('edit');
+  };
+
+  const handleViewPerson = (person: Person) => {
+    setSelectedPerson(person);
+    setViewMode('detail');
+  };
+
+  const handleEditPerson = (person: Person) => {
+    setSelectedPerson(person);
+    setViewMode('edit');
+  };
+
+  const handleCreatePerson = () => {
+    setSelectedPerson(null);
+    setViewMode('create');
+  };
+
+  const handleSavePerson = () => {
+    setViewMode('list');
+    setSelectedPerson(null);
+  };
+
+  const handleCancelPerson = () => {
+    setViewMode('list');
+    setSelectedPerson(null);
+  };
+
+  const handleBackToPersonList = () => {
+    setViewMode('list');
+    setSelectedPerson(null);
   };
 
   const menuItems = [
     { key: '1', icon: <ProjectOutlined />, label: 'Projects' },
-    { key: '2', icon: <TeamOutlined />, label: 'Employees' },
+    { key: '2', icon: <TeamOutlined />, label: 'People' },
     { key: '3', icon: <ClockCircleOutlined />, label: 'Deadlines' },
-    { key: '4', icon: <RocketOutlined />, label: 'Initiatives' },
-    { key: '5', icon: <UserOutlined />, label: 'Stakeholders' },
-    { key: '6', icon: <MessageOutlined />, label: 'Claude AI' },
-    { key: '7', icon: <FileTextOutlined />, label: 'Reports' },
+    { key: '4', icon: <MessageOutlined />, label: 'Claude AI' },
+    { key: '5', icon: <FileTextOutlined />, label: 'Reports' },
+    { key: '6', icon: <SettingOutlined />, label: 'Configuration' },
   ];
+
+  const renderContent = () => {
+    // Projects section
+    if (selectedMenu === '1') {
+      switch (viewMode) {
+        case 'detail':
+          return selectedProject ? (
+            <ProjectDetail
+              projectId={selectedProject.id}
+              onEdit={handleEditFromDetail}
+              onBack={handleBackToList}
+            />
+          ) : null;
+
+        case 'create':
+          return (
+            <ProjectForm
+              onSave={handleSaveProject}
+              onCancel={handleCancelProject}
+            />
+          );
+
+        case 'edit':
+          return selectedProject ? (
+            <ProjectForm
+              project={selectedProject}
+              onSave={handleSaveProject}
+              onCancel={handleCancelProject}
+            />
+          ) : null;
+
+        case 'list':
+        default:
+          return (
+            <ProjectList
+              onViewProject={handleViewProject}
+              onEditProject={handleEditProject}
+              onCreateProject={handleCreateProject}
+            />
+          );
+      }
+    }
+
+    // People section
+    if (selectedMenu === '2') {
+      switch (viewMode) {
+        case 'detail':
+          return selectedPerson ? (
+            <PersonDetail
+              person={selectedPerson}
+              onEdit={handleEditFromDetail}
+              onBack={handleBackToPersonList}
+            />
+          ) : null;
+
+        case 'create':
+          return (
+            <PersonForm
+              onSave={handleSavePerson}
+              onCancel={handleCancelPerson}
+            />
+          );
+
+        case 'edit':
+          return selectedPerson ? (
+            <PersonForm
+              person={selectedPerson}
+              onSave={handleSavePerson}
+              onCancel={handleCancelPerson}
+            />
+          ) : null;
+
+        case 'list':
+        default:
+          return (
+            <PersonList
+              onViewPerson={handleViewPerson}
+              onEditPerson={handleEditPerson}
+              onCreatePerson={handleCreatePerson}
+            />
+          );
+      }
+    }
+
+    // Other sections - coming soon
+    return (
+      <Card title={<Title level={4}>Coming Soon</Title>}>
+        <p>This feature is under development.</p>
+      </Card>
+    );
+  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
         <Title level={3} style={{ color: 'white', margin: 0 }}>
-          Claude Tracker
+          Project Tracker
         </Title>
       </Header>
       <Layout>
@@ -87,72 +219,19 @@ function App() {
           <Menu
             mode="inline"
             selectedKeys={[selectedMenu]}
-            onClick={(e) => setSelectedMenu(e.key)}
+            onClick={(e) => {
+              setSelectedMenu(e.key);
+              setViewMode('list');
+              setSelectedProject(null);
+              setSelectedPerson(null);
+            }}
             style={{ height: '100%', borderRight: 0 }}
             items={menuItems}
           />
         </Sider>
         <Layout style={{ padding: '24px' }}>
           <Content>
-            <Card
-              title={<Title level={4}>Projects</Title>}
-              style={{ marginBottom: 24 }}
-            >
-              <Paragraph>
-                Intelligent project and resource management for engineering managers
-              </Paragraph>
-
-              <Space.Compact style={{ width: '100%', marginBottom: 16 }}>
-                <Input
-                  placeholder="New project name"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  onPressEnter={createProject}
-                />
-                <Button type="primary" icon={<PlusOutlined />} onClick={createProject}>
-                  Add
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={loadProjects}>
-                  Refresh
-                </Button>
-              </Space.Compact>
-
-              {message && (
-                <Alert
-                  message={message}
-                  type="success"
-                  showIcon
-                  closable
-                  onClose={() => setMessage('')}
-                  style={{ marginBottom: 16 }}
-                />
-              )}
-
-              <List
-                bordered
-                dataSource={projects.length > 0 ? projects : ['No projects yet. Add one above!']}
-                renderItem={(item) => (
-                  <List.Item>
-                    <ProjectOutlined style={{ marginRight: 8 }} />
-                    {item}
-                  </List.Item>
-                )}
-              />
-            </Card>
-
-            <Card title={<Title level={4}>Coming Soon</Title>}>
-              <List
-                dataSource={[
-                  'Employee Management',
-                  'Deadline Tracking',
-                  'Initiative Planning',
-                  'Stakeholder Management',
-                  'Claude AI Chat Integration',
-                  'Status Report Generation',
-                ]}
-                renderItem={(item) => <List.Item>{item}</List.Item>}
-              />
-            </Card>
+            {renderContent()}
           </Content>
         </Layout>
       </Layout>

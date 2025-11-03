@@ -112,11 +112,60 @@ cd src-tauri && cargo tauri dev
 cd src-tauri && cargo tauri build
 ```
 
+## Configuration
+
+On first run, Claude Tracker will create a configuration file at `~/.claude-tracker/config.toml`. You need to edit this file and add your Anthropic API key.
+
+### Configuration File Location
+
+Default: `~/.claude-tracker/config.toml`
+
+You can override the configuration file location using the `--config` or `-c` flag:
+
+```bash
+track --config /path/to/config.toml projects list
+```
+
+### Configuration Options
+
+```toml
+# Anthropic API Key (required)
+api_key = "your-anthropic-api-key-here"
+
+# Data Storage Directory
+data_dir = "~/.claude-tracker/data"
+
+# Logging Configuration
+[logging]
+level = "info"  # Options: trace, debug, info, warn, error
+```
+
+Get your Anthropic API key from: https://console.anthropic.com/
+
+For detailed information about all configuration options, see [docs/config.md](docs/config.md).
+
+### Data Storage
+
+All data is stored in `~/.claude-tracker/data/` by default (configurable via `data_dir` in config). The application will automatically create the following subdirectories:
+
+- `projects/` - Project information
+- `employees/` - Employee records
+- `deadlines/` - Deadline tracking
+- `initiatives/` - Corporate initiatives
+- `stakeholders/` - Stakeholder information
+- `allocations/` - Resource allocations
+- `interactions/` - Stakeholder interactions
+- `notes/` - Notes and documentation
+- `reports/` - Generated reports
+
+For detailed information about data formats and storage structure, see [docs/storage.md](docs/storage.md).
+
 ## Usage
 
 ### GUI Mode
 ```bash
-track
+# Launch the GUI
+./track
 ```
 
 ### CLI Mode
@@ -132,6 +181,9 @@ track projects add "New Feature Development"
 
 # Generate status report
 track report --format markdown
+
+# Use custom config file
+track --config /path/to/config.toml projects list
 ```
 
 ## Development
@@ -216,6 +268,12 @@ npm run test:coverage
 ### Contributing
 
 See [CLAUDE.md](CLAUDE.md) for detailed development guidelines and architectural decisions.
+
+**Documentation:**
+- [docs/config.md](docs/config.md) - Configuration file format and options
+- [docs/storage.md](docs/storage.md) - Data storage formats and structure
+
+When adding new configuration options, be sure to update [docs/config.md](docs/config.md).
 
 ### Troubleshooting
 
