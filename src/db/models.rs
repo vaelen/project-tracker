@@ -47,6 +47,63 @@ impl Person {
     }
 }
 
+/// Represents a team in the system
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Team {
+    /// Unique identifier (team name)
+    pub name: String,
+
+    /// Team description
+    pub description: Option<String>,
+
+    /// Manager's email address
+    pub manager: Option<String>,
+
+    /// Creation timestamp
+    pub created_at: DateTime<Utc>,
+
+    /// Last update timestamp
+    pub updated_at: DateTime<Utc>,
+}
+
+impl Team {
+    /// Create a new team with required fields
+    pub fn new(name: String) -> Self {
+        let now = Utc::now();
+        Self {
+            name,
+            description: None,
+            manager: None,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+/// Represents a team member (junction table between teams and people)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamMember {
+    /// Team name
+    pub team_name: String,
+
+    /// Person's email address
+    pub person_email: String,
+
+    /// When this person was added to the team
+    pub created_at: DateTime<Utc>,
+}
+
+impl TeamMember {
+    /// Create a new team member relationship
+    pub fn new(team_name: String, person_email: String) -> Self {
+        Self {
+            team_name,
+            person_email,
+            created_at: Utc::now(),
+        }
+    }
+}
+
 /// Represents a project milestone
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Milestone {
@@ -67,6 +124,9 @@ pub struct Milestone {
 
     /// Technical lead email
     pub technical_lead: Option<String>,
+
+    /// Team assigned to this milestone
+    pub team: Option<String>,
 
     /// Link to design document
     pub design_doc_url: Option<String>,
@@ -95,6 +155,7 @@ impl Milestone {
             name,
             description: None,
             technical_lead: None,
+            team: None,
             design_doc_url: None,
             due_date: None,
             jira_epic: None,
@@ -129,6 +190,9 @@ pub struct Project {
     /// Manager email
     pub manager: Option<String>,
 
+    /// Team assigned to this project
+    pub team: Option<String>,
+
     /// Due date
     pub due_date: Option<DateTime<Utc>>,
 
@@ -154,6 +218,7 @@ impl Project {
             requirements_owner: None,
             technical_lead: None,
             manager: None,
+            team: None,
             due_date: None,
             jira_initiative: None,
             created_at: now,

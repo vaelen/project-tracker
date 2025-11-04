@@ -14,6 +14,14 @@ export interface Person {
   updated_at: string;
 }
 
+export interface Team {
+  name: string;
+  description?: string;
+  manager?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -22,6 +30,7 @@ export interface Project {
   requirements_owner?: string;
   technical_lead?: string;
   manager?: string;
+  team?: string;
   due_date?: string;
   jira_initiative?: string;
   created_at: string;
@@ -56,6 +65,7 @@ export interface Milestone {
   name: string;
   description?: string;
   technical_lead?: string;
+  team?: string;
   design_doc_url?: string;
   due_date?: string;
   jira_epic?: string;

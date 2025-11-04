@@ -9,6 +9,7 @@ import { Form, Input, Button, Card, message, DatePicker, Space, InputNumber } fr
 import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { MilestoneService } from '../services/milestoneService';
 import { PersonSelector } from './PersonSelector';
+import { TeamSelector } from './TeamSelector';
 import type { Milestone } from '../types';
 import dayjs from 'dayjs';
 
@@ -53,6 +54,7 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
         name: values.name,
         description: values.description || undefined,
         technical_lead: values.technical_lead || undefined,
+        team: values.team || undefined,
         design_doc_url: values.design_doc_url || undefined,
         due_date: values.due_date ? values.due_date.toISOString() : undefined,
         jira_epic: values.jira_epic || undefined,
@@ -86,6 +88,7 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
         name: '',
         description: '',
         technical_lead: undefined,
+        team: undefined,
         design_doc_url: '',
         due_date: null,
         jira_epic: '',
@@ -119,6 +122,13 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
         label="Technical Lead"
       >
         <PersonSelector placeholder="Select technical lead" />
+      </Form.Item>
+
+      <Form.Item
+        name="team"
+        label="Team"
+      >
+        <TeamSelector placeholder="Select team" />
       </Form.Item>
 
       <Form.Item

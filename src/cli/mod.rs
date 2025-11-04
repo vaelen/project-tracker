@@ -31,6 +31,28 @@ pub enum PeopleAction {
     Show { id: String },
 }
 
+#[derive(Subcommand)]
+pub enum TeamAction {
+    /// List all teams
+    List,
+    /// Add a new team
+    Add { name: String },
+    /// Remove a team
+    Remove { name: String },
+    /// Show team details
+    Show { name: String },
+    /// Add a member to a team
+    AddMember {
+        team_name: String,
+        person_email: String,
+    },
+    /// Remove a member from a team
+    RemoveMember {
+        team_name: String,
+        person_email: String,
+    },
+}
+
 pub async fn handle_projects(_action: ProjectAction, config: &Config) -> Result<()> {
     log::debug!("Data directory: {}", config.data_dir);
     println!("Project management - coming soon");
@@ -40,6 +62,12 @@ pub async fn handle_projects(_action: ProjectAction, config: &Config) -> Result<
 pub async fn handle_people(_action: PeopleAction, config: &Config) -> Result<()> {
     log::debug!("Data directory: {}", config.data_dir);
     println!("People management - coming soon");
+    Ok(())
+}
+
+pub async fn handle_teams(_action: TeamAction, config: &Config) -> Result<()> {
+    log::debug!("Data directory: {}", config.data_dir);
+    println!("Team management - coming soon");
     Ok(())
 }
 

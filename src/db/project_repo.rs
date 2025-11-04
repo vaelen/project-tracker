@@ -22,8 +22,8 @@ impl<'a> ProjectRepository<'a> {
     pub fn create(&self, project: &Project) -> Result<()> {
         self.conn.execute(
             "INSERT INTO projects (id, name, description, type, requirements_owner, technical_lead,
-                                  manager, due_date, jira_initiative, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                                  manager, team, due_date, jira_initiative, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 project.id.to_string(),
                 &project.name,
@@ -32,6 +32,7 @@ impl<'a> ProjectRepository<'a> {
                 &project.requirements_owner,
                 &project.technical_lead,
                 &project.manager,
+                &project.team,
                 project.due_date.map(|d| d.to_rfc3339()),
                 &project.jira_initiative,
                 project.created_at.to_rfc3339(),
@@ -47,7 +48,7 @@ impl<'a> ProjectRepository<'a> {
         let project = self
             .conn
             .query_row(
-                "SELECT id, name, description, type, requirements_owner, technical_lead, manager,
+                "SELECT id, name, description, type, requirements_owner, technical_lead, manager, team,
                         due_date, jira_initiative, created_at, updated_at
                  FROM projects WHERE id = ?1",
                 params![id.to_string()],
@@ -60,10 +61,11 @@ impl<'a> ProjectRepository<'a> {
                         requirements_owner: row.get(4)?,
                         technical_lead: row.get(5)?,
                         manager: row.get(6)?,
-                        due_date: row.get(7)?,
-                        jira_initiative: row.get(8)?,
-                        created_at: row.get(9)?,
-                        updated_at: row.get(10)?,
+                        team: row.get(7)?,
+                        due_date: row.get(8)?,
+                        jira_initiative: row.get(9)?,
+                        created_at: row.get(10)?,
+                        updated_at: row.get(11)?,
                     })
                 },
             )
@@ -74,7 +76,7 @@ impl<'a> ProjectRepository<'a> {
     /// List all projects
     pub fn list_all(&self) -> Result<Vec<Project>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, name, description, type, requirements_owner, technical_lead, manager,
+            "SELECT id, name, description, type, requirements_owner, technical_lead, manager, team,
                     due_date, jira_initiative, created_at, updated_at
              FROM projects ORDER BY name",
         )?;
@@ -89,10 +91,11 @@ impl<'a> ProjectRepository<'a> {
                     requirements_owner: row.get(4)?,
                     technical_lead: row.get(5)?,
                     manager: row.get(6)?,
-                    due_date: row.get(7)?,
-                    jira_initiative: row.get(8)?,
-                    created_at: row.get(9)?,
-                    updated_at: row.get(10)?,
+                    team: row.get(7)?,
+                    due_date: row.get(8)?,
+                    jira_initiative: row.get(9)?,
+                    created_at: row.get(10)?,
+                    updated_at: row.get(11)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -104,9 +107,9 @@ impl<'a> ProjectRepository<'a> {
     pub fn update(&self, project: &Project) -> Result<()> {
         let rows = self.conn.execute(
             "UPDATE projects SET name = ?1, description = ?2, type = ?3, requirements_owner = ?4,
-                                technical_lead = ?5, manager = ?6, due_date = ?7,
-                                jira_initiative = ?8, updated_at = ?9
-             WHERE id = ?10",
+                                technical_lead = ?5, manager = ?6, team = ?7, due_date = ?8,
+                                jira_initiative = ?9, updated_at = ?10
+             WHERE id = ?11",
             params![
                 &project.name,
                 &project.description,
@@ -114,6 +117,7 @@ impl<'a> ProjectRepository<'a> {
                 &project.requirements_owner,
                 &project.technical_lead,
                 &project.manager,
+                &project.team,
                 project.due_date.map(|d| d.to_rfc3339()),
                 &project.jira_initiative,
                 Utc::now().to_rfc3339(),
@@ -168,7 +172,7 @@ impl<'a> ProjectRepository<'a> {
     /// Get project milestones
     pub fn get_milestones(&self, project_id: &Uuid) -> Result<Vec<Milestone>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, project_id, number, name, description, technical_lead,
+            "SELECT id, project_id, number, name, description, technical_lead, team,
                     design_doc_url, due_date, jira_epic, created_at, updated_at
              FROM milestones WHERE project_id = ?1 ORDER BY number",
         )?;
@@ -182,11 +186,12 @@ impl<'a> ProjectRepository<'a> {
                     name: row.get(3)?,
                     description: row.get(4)?,
                     technical_lead: row.get(5)?,
-                    design_doc_url: row.get(6)?,
-                    due_date: row.get(7)?,
-                    jira_epic: row.get(8)?,
-                    created_at: row.get(9)?,
-                    updated_at: row.get(10)?,
+                    team: row.get(6)?,
+                    design_doc_url: row.get(7)?,
+                    due_date: row.get(8)?,
+                    jira_epic: row.get(9)?,
+                    created_at: row.get(10)?,
+                    updated_at: row.get(11)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -197,9 +202,9 @@ impl<'a> ProjectRepository<'a> {
     /// Add milestone to project
     pub fn add_milestone(&self, milestone: &Milestone) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO milestones (id, project_id, number, name, description, technical_lead,
+            "INSERT INTO milestones (id, project_id, number, name, description, technical_lead, team,
                                     design_doc_url, due_date, jira_epic, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 milestone.id.to_string(),
                 milestone.project_id.to_string(),
@@ -207,6 +212,7 @@ impl<'a> ProjectRepository<'a> {
                 &milestone.name,
                 &milestone.description,
                 &milestone.technical_lead,
+                &milestone.team,
                 &milestone.design_doc_url,
                 milestone.due_date.map(|d| d.to_rfc3339()),
                 &milestone.jira_epic,
@@ -221,13 +227,14 @@ impl<'a> ProjectRepository<'a> {
     pub fn update_milestone(&self, milestone: &Milestone) -> Result<()> {
         let rows = self.conn.execute(
             "UPDATE milestones SET number = ?1, name = ?2, description = ?3, technical_lead = ?4,
-                                   design_doc_url = ?5, due_date = ?6, jira_epic = ?7, updated_at = ?8
-             WHERE id = ?9",
+                                   team = ?5, design_doc_url = ?6, due_date = ?7, jira_epic = ?8, updated_at = ?9
+             WHERE id = ?10",
             params![
                 milestone.number,
                 &milestone.name,
                 &milestone.description,
                 &milestone.technical_lead,
+                &milestone.team,
                 &milestone.design_doc_url,
                 milestone.due_date.map(|d| d.to_rfc3339()),
                 &milestone.jira_epic,

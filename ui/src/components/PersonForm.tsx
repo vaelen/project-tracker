@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, message, Select, Space } from 'antd';
 import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { PersonService } from '../services/personService';
+import { TeamSelector } from './TeamSelector';
 import type { Person } from '../types';
 
 const { TextArea } = Input;
@@ -127,7 +128,7 @@ export const PersonForm: React.FC<PersonFormProps> = ({ person, onSave, onCancel
         name="team"
         label="Team"
       >
-        <Input placeholder="Enter team name" />
+        <TeamSelector placeholder="Select team" />
       </Form.Item>
 
       <Form.Item

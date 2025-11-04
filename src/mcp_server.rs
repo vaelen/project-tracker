@@ -75,6 +75,44 @@ struct CreatePersonRequest {
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct SearchTeamsRequest {
+    /// Search query
+    query: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetTeamRequest {
+    /// Team name
+    name: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct CreateTeamRequest {
+    /// Team name
+    name: String,
+    /// Team description
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+    /// Manager email
+    #[serde(skip_serializing_if = "Option::is_none")]
+    manager: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct TeamMemberRequest {
+    /// Team name
+    team_name: String,
+    /// Person email
+    person_email: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetTeamMembersRequest {
+    /// Team name
+    team_name: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetMilestonesRequest {
     /// Project UUID
     project_id: String,
@@ -207,6 +245,102 @@ impl ProjectTrackerServer {
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
 
+    // Team tools
+
+    #[tool(description = "List all teams")]
+    async fn list_teams(&self) -> Result<CallToolResult, McpError> {
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        let teams = repo.list_all()
+            .map_err(|e| McpError::internal_error("Failed to list teams", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&teams)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "Search teams by name")]
+    async fn search_teams(&self, Parameters(req): Parameters<SearchTeamsRequest>) -> Result<CallToolResult, McpError> {
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        let teams = repo.search_by_name(&req.query)
+            .map_err(|e| McpError::internal_error("Search failed", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&teams)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "Get a team by name")]
+    async fn get_team(&self, Parameters(req): Parameters<GetTeamRequest>) -> Result<CallToolResult, McpError> {
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        let team = repo.find_by_name(&req.name)
+            .map_err(|e| McpError::internal_error("Database error", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&team)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "Create a new team")]
+    async fn create_team(&self, Parameters(req): Parameters<CreateTeamRequest>) -> Result<CallToolResult, McpError> {
+        let mut team = db::Team::new(req.name);
+
+        if let Some(desc) = req.description {
+            team.description = Some(desc);
+        }
+        if let Some(manager) = req.manager {
+            team.manager = Some(manager);
+        }
+
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        repo.create(&team)
+            .map_err(|e| McpError::internal_error("Failed to create team", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&team)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "Add a member to a team")]
+    async fn add_team_member(&self, Parameters(req): Parameters<TeamMemberRequest>) -> Result<CallToolResult, McpError> {
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        repo.add_member(&req.team_name, &req.person_email)
+            .map_err(|e| McpError::internal_error("Failed to add team member", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(format!("Added {} to team {}", req.person_email, req.team_name))]))
+    }
+
+    #[tool(description = "Remove a member from a team")]
+    async fn remove_team_member(&self, Parameters(req): Parameters<TeamMemberRequest>) -> Result<CallToolResult, McpError> {
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        repo.remove_member(&req.team_name, &req.person_email)
+            .map_err(|e| McpError::internal_error("Failed to remove team member", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(format!("Removed {} from team {}", req.person_email, req.team_name))]))
+    }
+
+    #[tool(description = "Get all members of a team")]
+    async fn get_team_members(&self, Parameters(req): Parameters<GetTeamMembersRequest>) -> Result<CallToolResult, McpError> {
+        let db = self.db.lock().await;
+        let repo = db::TeamRepository::new(&db);
+        let members = repo.get_members(&req.team_name)
+            .map_err(|e| McpError::internal_error("Failed to get team members", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&members)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
     // Milestone tools
 
     #[tool(description = "List milestones for a project")]
@@ -236,8 +370,11 @@ impl ServerHandler for ProjectTrackerServer {
                 .build(),
             server_info: Implementation::from_build_env(),
             instructions: Some(
-                "Project Tracker MCP Server. Available tools: list_projects, get_project, create_project, \
-                list_people, search_people, get_person, create_person, list_milestones".to_string()
+                "Project Tracker MCP Server. Available tools: \
+                list_projects, get_project, create_project, \
+                list_people, search_people, get_person, create_person, \
+                list_teams, search_teams, get_team, create_team, add_team_member, remove_team_member, get_team_members, \
+                list_milestones".to_string()
             ),
         }
     }

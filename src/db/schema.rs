@@ -28,6 +28,38 @@ pub fn initialize_schema(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    // Create teams table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS teams (
+            name TEXT PRIMARY KEY NOT NULL,
+            description TEXT,
+            manager TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (manager) REFERENCES people(email)
+        )",
+        [],
+    )?;
+
+    // Create index on team names
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name)",
+        [],
+    )?;
+
+    // Create team_members junction table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS team_members (
+            team_name TEXT NOT NULL,
+            person_email TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (team_name, person_email),
+            FOREIGN KEY (team_name) REFERENCES teams(name) ON DELETE CASCADE,
+            FOREIGN KEY (person_email) REFERENCES people(email) ON DELETE CASCADE
+        )",
+        [],
+    )?;
+
     // Create projects table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS projects (
@@ -285,6 +317,53 @@ pub fn apply_migrations(conn: &Connection) -> Result<()> {
         )?;
     }
 
+    // Migration to version 4: Add team column to projects and milestones
+    if current_version < 4 {
+        log::info!("Applying migration to version 4: Adding team column to projects and milestones");
+
+        // Check and add team to projects
+        let has_projects_team: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('projects') WHERE name='team'",
+                [],
+                |row| {
+                    let count: i32 = row.get(0)?;
+                    Ok(count > 0)
+                },
+            )?;
+
+        if !has_projects_team {
+            conn.execute(
+                "ALTER TABLE projects ADD COLUMN team TEXT",
+                [],
+            )?;
+        }
+
+        // Check and add team to milestones
+        let has_milestones_team: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('milestones') WHERE name='team'",
+                [],
+                |row| {
+                    let count: i32 = row.get(0)?;
+                    Ok(count > 0)
+                },
+            )?;
+
+        if !has_milestones_team {
+            conn.execute(
+                "ALTER TABLE milestones ADD COLUMN team TEXT",
+                [],
+            )?;
+        }
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, applied_at)
+             VALUES (4, datetime('now'))",
+            [],
+        )?;
+    }
+
     log::info!("Database migrations complete");
     Ok(())
 }
@@ -311,6 +390,8 @@ mod tests {
             .unwrap();
 
         assert!(tables.contains(&"people".to_string()));
+        assert!(tables.contains(&"teams".to_string()));
+        assert!(tables.contains(&"team_members".to_string()));
         assert!(tables.contains(&"projects".to_string()));
         assert!(tables.contains(&"milestones".to_string()));
         assert!(tables.contains(&"project_stakeholders".to_string()));
@@ -355,9 +436,9 @@ mod tests {
         // Apply migrations
         apply_migrations(&conn).unwrap();
 
-        // Should now be at version 3 (latest)
+        // Should now be at version 4 (latest)
         let version = get_schema_version(&conn).unwrap();
-        assert_eq!(version, 3);
+        assert_eq!(version, 4);
     }
 
     #[test]
@@ -370,7 +451,7 @@ mod tests {
         apply_migrations(&conn).unwrap();
 
         let version = get_schema_version(&conn).unwrap();
-        assert_eq!(version, 3);
+        assert_eq!(version, 4);
     }
 
     #[test]
@@ -515,6 +596,7 @@ mod tests {
             .unwrap();
 
         assert!(indexes.contains(&"idx_people_name".to_string()));
+        assert!(indexes.contains(&"idx_teams_name".to_string()));
         assert!(indexes.contains(&"idx_projects_name".to_string()));
         assert!(indexes.contains(&"idx_milestones_due_date".to_string()));
     }

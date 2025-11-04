@@ -38,6 +38,11 @@ enum Commands {
         #[command(subcommand)]
         action: cli::PeopleAction,
     },
+    /// Manage teams
+    Teams {
+        #[command(subcommand)]
+        action: cli::TeamAction,
+    },
     /// Generate reports
     Report {
         /// Output format (markdown, text, json)
@@ -79,6 +84,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Projects { action } => cli::handle_projects(action, &config).await?,
         Commands::People { action } => cli::handle_people(action, &config).await?,
+        Commands::Teams { action } => cli::handle_teams(action, &config).await?,
         Commands::Report { format } => cli::handle_report(&format, &config).await?,
     }
 

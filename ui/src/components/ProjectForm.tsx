@@ -9,6 +9,7 @@ import { Form, Input, Button, Card, message, DatePicker, Space, Select } from 'a
 import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { ProjectService } from '../services/projectService';
 import { PersonSelector } from './PersonSelector';
+import { TeamSelector } from './TeamSelector';
 import type { Project } from '../types';
 import dayjs from 'dayjs';
 
@@ -46,6 +47,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
         requirements_owner: values.requirements_owner || undefined,
         technical_lead: values.technical_lead || undefined,
         manager: values.manager || undefined,
+        team: values.team || undefined,
         due_date: values.due_date ? values.due_date.toISOString() : undefined,
         jira_initiative: values.jira_initiative || undefined,
         created_at: project?.created_at || new Date().toISOString(),
@@ -81,6 +83,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
           requirements_owner: undefined,
           technical_lead: undefined,
           manager: undefined,
+          team: undefined,
           due_date: null,
           jira_initiative: '',
         }}
@@ -131,6 +134,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
           label="Manager"
         >
           <PersonSelector placeholder="Select manager" />
+        </Form.Item>
+
+        <Form.Item
+          name="team"
+          label="Team"
+        >
+          <TeamSelector placeholder="Select team" />
         </Form.Item>
 
         <Form.Item

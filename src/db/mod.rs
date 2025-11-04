@@ -8,10 +8,12 @@ pub mod models;
 pub mod person_repo;
 pub mod project_repo;
 pub mod schema;
+pub mod team_repo;
 
-pub use models::{Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote};
+pub use models::{Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote, Team, TeamMember};
 pub use person_repo::PersonRepository;
 pub use project_repo::ProjectRepository;
+pub use team_repo::TeamRepository;
 
 use anyhow::{Context, Result};
 use rusqlite::Connection;
@@ -63,6 +65,6 @@ mod tests {
 
         // Verify schema exists and migrations applied
         let version = schema::get_schema_version(&conn).unwrap();
-        assert_eq!(version, 3); // Current version after all migrations
+        assert_eq!(version, 4); // Current version after all migrations
     }
 }

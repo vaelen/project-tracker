@@ -7,7 +7,7 @@
 
 use project_tracker::{
     config::Config,
-    db::{self, Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote},
+    db::{self, Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote, Team},
 };
 use rusqlite::Connection;
 use std::sync::Mutex;
@@ -162,6 +162,80 @@ async fn delete_person(email: String, state: State<'_, AppState>) -> Result<(), 
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let repo = db::PersonRepository::new(&db);
     repo.delete(&email).map_err(|e| e.to_string())
+}
+
+// Team commands
+
+#[tauri::command]
+async fn list_teams(state: State<'_, AppState>) -> Result<Vec<Team>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.list_all().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_team(name: String, state: State<'_, AppState>) -> Result<Option<Team>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.find_by_name(&name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_team(team: Team, state: State<'_, AppState>) -> Result<Team, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.create(&team).map_err(|e| e.to_string())?;
+    Ok(team)
+}
+
+#[tauri::command]
+async fn update_team(team: Team, state: State<'_, AppState>) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.update(&team).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_team(name: String, state: State<'_, AppState>) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.delete(&name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn search_teams(query: String, state: State<'_, AppState>) -> Result<Vec<Team>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.search_by_name(&query).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_team_member(
+    team_name: String,
+    person_email: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.add_member(&team_name, &person_email).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn remove_team_member(
+    team_name: String,
+    person_email: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.remove_member(&team_name, &person_email).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_team_members(team_name: String, state: State<'_, AppState>) -> Result<Vec<Person>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::TeamRepository::new(&db);
+    repo.get_members(&team_name).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -392,6 +466,15 @@ fn main() {
             create_person,
             update_person,
             delete_person,
+            list_teams,
+            get_team,
+            create_team,
+            update_team,
+            delete_team,
+            search_teams,
+            add_team_member,
+            remove_team_member,
+            get_team_members,
             get_jira_url,
             get_default_email_domain,
             get_project_types,

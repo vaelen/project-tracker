@@ -14,7 +14,8 @@ import {
 } from 'antd';
 import {
   ProjectOutlined,
-  TeamOutlined,
+  UserOutlined,
+  UsergroupAddOutlined,
   ClockCircleOutlined,
   FileTextOutlined,
   InfoCircleOutlined,
@@ -25,9 +26,12 @@ import { ProjectForm } from './components/ProjectForm';
 import { PersonList } from './components/PersonList';
 import { PersonDetail } from './components/PersonDetail';
 import { PersonForm } from './components/PersonForm';
+import { TeamList } from './components/TeamList';
+import { TeamDetail } from './components/TeamDetail';
+import { TeamForm } from './components/TeamForm';
 import { DeadlinesList } from './components/DeadlinesList';
 import { About } from './components/About';
-import type { Project, Person, Milestone } from './types';
+import type { Project, Person, Team, Milestone } from './types';
 
 const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
@@ -39,6 +43,7 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   const {
     token: { colorBgContainer },
@@ -108,6 +113,36 @@ function App() {
     setSelectedPerson(null);
   };
 
+  const handleViewTeam = (team: Team) => {
+    setSelectedTeam(team);
+    setViewMode('detail');
+  };
+
+  const handleEditTeam = (team: Team) => {
+    setSelectedTeam(team);
+    setViewMode('edit');
+  };
+
+  const handleCreateTeam = () => {
+    setSelectedTeam(null);
+    setViewMode('create');
+  };
+
+  const handleSaveTeam = () => {
+    setViewMode('list');
+    setSelectedTeam(null);
+  };
+
+  const handleCancelTeam = () => {
+    setViewMode('list');
+    setSelectedTeam(null);
+  };
+
+  const handleBackToTeamList = () => {
+    setViewMode('list');
+    setSelectedTeam(null);
+  };
+
   const handleViewProjectFromDeadlines = (project: Project) => {
     setSelectedMenu('1');
     setSelectedProject(project);
@@ -131,10 +166,11 @@ function App() {
 
   const menuItems = [
     { key: '1', icon: <ProjectOutlined />, label: 'Projects' },
-    { key: '2', icon: <TeamOutlined />, label: 'People' },
-    { key: '3', icon: <ClockCircleOutlined />, label: 'Deadlines' },
-    { key: '4', icon: <FileTextOutlined />, label: 'Reports' },
-    { key: '5', icon: <InfoCircleOutlined />, label: 'About' },
+    { key: '2', icon: <UserOutlined />, label: 'People' },
+    { key: '3', icon: <UsergroupAddOutlined />, label: 'Teams' },
+    { key: '4', icon: <ClockCircleOutlined />, label: 'Deadlines' },
+    { key: '5', icon: <FileTextOutlined />, label: 'Reports' },
+    { key: '6', icon: <InfoCircleOutlined />, label: 'About' },
   ];
 
   const renderContent = () => {
@@ -220,8 +256,50 @@ function App() {
       }
     }
 
-    // Deadlines section
+    // Teams section
     if (selectedMenu === '3') {
+      switch (viewMode) {
+        case 'detail':
+          return selectedTeam ? (
+            <TeamDetail
+              team={selectedTeam}
+              onEdit={handleEditFromDetail}
+              onBack={handleBackToTeamList}
+              onViewProject={handleViewProject}
+            />
+          ) : null;
+
+        case 'create':
+          return (
+            <TeamForm
+              onSave={handleSaveTeam}
+              onCancel={handleCancelTeam}
+            />
+          );
+
+        case 'edit':
+          return selectedTeam ? (
+            <TeamForm
+              team={selectedTeam}
+              onSave={handleSaveTeam}
+              onCancel={handleCancelTeam}
+            />
+          ) : null;
+
+        case 'list':
+        default:
+          return (
+            <TeamList
+              onViewTeam={handleViewTeam}
+              onEditTeam={handleEditTeam}
+              onCreateTeam={handleCreateTeam}
+            />
+          );
+      }
+    }
+
+    // Deadlines section
+    if (selectedMenu === '4') {
       return (
         <DeadlinesList
           onViewProject={handleViewProjectFromDeadlines}
@@ -231,7 +309,7 @@ function App() {
     }
 
     // About section
-    if (selectedMenu === '5') {
+    if (selectedMenu === '6') {
       return <About />;
     }
 
@@ -260,6 +338,7 @@ function App() {
               setViewMode('list');
               setSelectedProject(null);
               setSelectedPerson(null);
+              setSelectedTeam(null);
             }}
             style={{ height: '100%', borderRight: 0 }}
             items={menuItems}
