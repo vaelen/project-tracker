@@ -7,7 +7,7 @@
 
 use project_tracker::{
     config::Config,
-    db::{self, Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote, Team},
+    db::{self, Milestone, MilestoneNote, MilestoneResource, Person, Project, ProjectNote, ProjectResource, ProjectStakeholder, StakeholderNote, Team},
 };
 use rusqlite::Connection;
 use std::sync::Mutex;
@@ -279,6 +279,104 @@ async fn remove_stakeholder(
     repo.remove_stakeholder(&uuid, &stakeholder_email).map_err(|e| e.to_string())
 }
 
+// Project Resource commands
+
+#[tauri::command]
+async fn get_project_resources(
+    project_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<ProjectResource>, String> {
+    let uuid = Uuid::parse_str(&project_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.get_project_resources(&uuid).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_project_resource(
+    project_id: String,
+    resource: ProjectResource,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let uuid = Uuid::parse_str(&project_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.add_project_resource(&uuid, &resource).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_project_resource(
+    project_id: String,
+    resource: ProjectResource,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let uuid = Uuid::parse_str(&project_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.update_project_resource(&uuid, &resource).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn remove_project_resource(
+    project_id: String,
+    person_email: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let uuid = Uuid::parse_str(&project_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.remove_project_resource(&uuid, &person_email).map_err(|e| e.to_string())
+}
+
+// Milestone Resource commands
+
+#[tauri::command]
+async fn get_milestone_resources(
+    milestone_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<MilestoneResource>, String> {
+    let uuid = Uuid::parse_str(&milestone_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.get_milestone_resources(&uuid).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_milestone_resource(
+    milestone_id: String,
+    resource: MilestoneResource,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let uuid = Uuid::parse_str(&milestone_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.add_milestone_resource(&uuid, &resource).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_milestone_resource(
+    milestone_id: String,
+    resource: MilestoneResource,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let uuid = Uuid::parse_str(&milestone_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.update_milestone_resource(&uuid, &resource).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn remove_milestone_resource(
+    milestone_id: String,
+    person_email: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let uuid = Uuid::parse_str(&milestone_id).map_err(|e| e.to_string())?;
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let repo = db::ProjectRepository::new(&db);
+    repo.remove_milestone_resource(&uuid, &person_email).map_err(|e| e.to_string())
+}
+
 // Project Note commands
 
 #[tauri::command]
@@ -448,6 +546,14 @@ fn main() {
             add_project_stakeholder,
             update_stakeholder,
             remove_stakeholder,
+            get_project_resources,
+            add_project_resource,
+            update_project_resource,
+            remove_project_resource,
+            get_milestone_resources,
+            add_milestone_resource,
+            update_milestone_resource,
+            remove_milestone_resource,
             get_project_notes,
             add_project_note,
             update_project_note,

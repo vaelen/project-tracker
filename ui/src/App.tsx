@@ -17,6 +17,7 @@ import {
   UserOutlined,
   UsergroupAddOutlined,
   ClockCircleOutlined,
+  TeamOutlined,
   FileTextOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
@@ -30,6 +31,7 @@ import { TeamList } from './components/TeamList';
 import { TeamDetail } from './components/TeamDetail';
 import { TeamForm } from './components/TeamForm';
 import { DeadlinesList } from './components/DeadlinesList';
+import { Resources } from './components/Resources';
 import { About } from './components/About';
 import type { Project, Person, Team, Milestone } from './types';
 
@@ -169,8 +171,9 @@ function App() {
     { key: '2', icon: <UserOutlined />, label: 'People' },
     { key: '3', icon: <UsergroupAddOutlined />, label: 'Teams' },
     { key: '4', icon: <ClockCircleOutlined />, label: 'Deadlines' },
-    { key: '5', icon: <FileTextOutlined />, label: 'Reports' },
-    { key: '6', icon: <InfoCircleOutlined />, label: 'About' },
+    { key: '5', icon: <TeamOutlined />, label: 'Resources' },
+    { key: '6', icon: <FileTextOutlined />, label: 'Reports' },
+    { key: '7', icon: <InfoCircleOutlined />, label: 'About' },
   ];
 
   const renderContent = () => {
@@ -308,8 +311,13 @@ function App() {
       );
     }
 
+    // Resources section
+    if (selectedMenu === '5') {
+      return <Resources />;
+    }
+
     // About section
-    if (selectedMenu === '6') {
+    if (selectedMenu === '7') {
       return <About />;
     }
 

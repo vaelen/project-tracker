@@ -1,0 +1,108 @@
+/**
+ * Copyright 2025 Andrew C. Young <andrew@vaelen.org>
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+.resources-container {
+  width: 100%;
+}
+
+.swimlane-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.swimlane-wrapper {
+  min-width: fit-content;
+}
+
+.swimlane-row {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.swimlane-row:last-child {
+  border-bottom: none;
+}
+
+.swimlane-header {
+  background-color: #fafafa;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.swimlane-cell {
+  border-right: 1px solid #f0f0f0;
+  padding: 8px 12px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.swimlane-cell:last-child {
+  border-right: none;
+}
+
+.swimlane-person-cell {
+  width: 180px;
+  min-width: 180px;
+  position: sticky;
+  left: 0;
+  background-color: white;
+  z-index: 5;
+  font-weight: 500;
+  border-right: 2px solid #e0e0e0 !important;
+}
+
+.swimlane-header .swimlane-person-cell {
+  background-color: #fafafa;
+  z-index: 15;
+}
+
+.swimlane-time-cell {
+  width: 120px;
+  min-width: 120px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  position: relative;
+}
+
+.swimlane-header .swimlane-time-cell {
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  text-align: center;
+}
+
+.assignment-block {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 3px;
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assignment-block:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.assignment-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

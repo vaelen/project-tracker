@@ -131,6 +131,9 @@ pub struct Milestone {
     /// Link to design document
     pub design_doc_url: Option<String>,
 
+    /// Start date
+    pub start_date: Option<DateTime<Utc>>,
+
     /// Due date
     pub due_date: Option<DateTime<Utc>>,
 
@@ -157,6 +160,7 @@ impl Milestone {
             technical_lead: None,
             team: None,
             design_doc_url: None,
+            start_date: None,
             due_date: None,
             jira_epic: None,
             created_at: now,
@@ -193,6 +197,9 @@ pub struct Project {
     /// Team assigned to this project
     pub team: Option<String>,
 
+    /// Start date
+    pub start_date: Option<DateTime<Utc>>,
+
     /// Due date
     pub due_date: Option<DateTime<Utc>>,
 
@@ -219,6 +226,7 @@ impl Project {
             technical_lead: None,
             manager: None,
             team: None,
+            start_date: None,
             due_date: None,
             jira_initiative: None,
             created_at: now,
@@ -249,6 +257,62 @@ impl ProjectStakeholder {
         Self {
             project_id,
             stakeholder_email,
+            role: None,
+            created_at: Utc::now(),
+        }
+    }
+}
+
+/// Represents a project resource (person working on project)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectResource {
+    /// Project ID
+    pub project_id: Uuid,
+
+    /// Person's email address
+    pub person_email: String,
+
+    /// Person's role/responsibilities on this project
+    pub role: Option<String>,
+
+    /// Creation timestamp
+    pub created_at: DateTime<Utc>,
+}
+
+impl ProjectResource {
+    /// Create a new project resource relationship
+    pub fn new(project_id: Uuid, person_email: String) -> Self {
+        Self {
+            project_id,
+            person_email,
+            role: None,
+            created_at: Utc::now(),
+        }
+    }
+}
+
+/// Represents a milestone resource (person working on milestone)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MilestoneResource {
+    /// Milestone ID
+    pub milestone_id: Uuid,
+
+    /// Person's email address
+    pub person_email: String,
+
+    /// Person's role/responsibilities on this milestone
+    pub role: Option<String>,
+
+    /// Creation timestamp
+    pub created_at: DateTime<Utc>,
+}
+
+impl MilestoneResource {
+    /// Create a new milestone resource relationship
+    pub fn new(milestone_id: Uuid, person_email: String) -> Self {
+        Self {
+            milestone_id,
+            person_email,
             role: None,
             created_at: Utc::now(),
         }

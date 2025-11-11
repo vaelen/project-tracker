@@ -5,7 +5,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import type { Project, Milestone, ProjectStakeholder, Person } from '../types';
+import type { Project, Milestone, ProjectStakeholder, ProjectResource, MilestoneResource, Person } from '../types';
 
 export class ProjectService {
   /**
@@ -119,5 +119,61 @@ export class ProjectService {
   static async getFullJiraUrl(ticketNumber: string): Promise<string> {
     const baseUrl = await this.getJiraUrl();
     return `${baseUrl}${ticketNumber}`;
+  }
+
+  /**
+   * Get resources for a project
+   */
+  static async getProjectResources(projectId: string): Promise<ProjectResource[]> {
+    return await invoke<ProjectResource[]>('get_project_resources', { projectId });
+  }
+
+  /**
+   * Add a resource to a project
+   */
+  static async addProjectResource(projectId: string, resource: ProjectResource): Promise<void> {
+    await invoke('add_project_resource', { projectId, resource });
+  }
+
+  /**
+   * Update a project resource
+   */
+  static async updateProjectResource(projectId: string, resource: ProjectResource): Promise<void> {
+    await invoke('update_project_resource', { projectId, resource });
+  }
+
+  /**
+   * Remove a resource from a project
+   */
+  static async removeProjectResource(projectId: string, personEmail: string): Promise<void> {
+    await invoke('remove_project_resource', { projectId, personEmail });
+  }
+
+  /**
+   * Get resources for a milestone
+   */
+  static async getMilestoneResources(milestoneId: string): Promise<MilestoneResource[]> {
+    return await invoke<MilestoneResource[]>('get_milestone_resources', { milestoneId });
+  }
+
+  /**
+   * Add a resource to a milestone
+   */
+  static async addMilestoneResource(milestoneId: string, resource: MilestoneResource): Promise<void> {
+    await invoke('add_milestone_resource', { milestoneId, resource });
+  }
+
+  /**
+   * Update a milestone resource
+   */
+  static async updateMilestoneResource(milestoneId: string, resource: MilestoneResource): Promise<void> {
+    await invoke('update_milestone_resource', { milestoneId, resource });
+  }
+
+  /**
+   * Remove a resource from a milestone
+   */
+  static async removeMilestoneResource(milestoneId: string, personEmail: string): Promise<void> {
+    await invoke('remove_milestone_resource', { milestoneId, personEmail });
   }
 }

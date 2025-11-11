@@ -118,6 +118,56 @@ struct GetMilestonesRequest {
     project_id: String,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct AddProjectResourceRequest {
+    /// Project UUID
+    project_id: String,
+    /// Person email
+    person_email: String,
+    /// Resource role
+    #[serde(skip_serializing_if = "Option::is_none")]
+    role: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetProjectResourcesRequest {
+    /// Project UUID
+    project_id: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct RemoveProjectResourceRequest {
+    /// Project UUID
+    project_id: String,
+    /// Person email
+    person_email: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct AddMilestoneResourceRequest {
+    /// Milestone UUID
+    milestone_id: String,
+    /// Person email
+    person_email: String,
+    /// Resource role
+    #[serde(skip_serializing_if = "Option::is_none")]
+    role: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetMilestoneResourcesRequest {
+    /// Milestone UUID
+    milestone_id: String,
+}
+
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct RemoveMilestoneResourceRequest {
+    /// Milestone UUID
+    milestone_id: String,
+    /// Person email
+    person_email: String,
+}
+
 #[tool_router]
 impl ProjectTrackerServer {
     fn new(config: Config, db: Connection) -> Self {
@@ -358,6 +408,114 @@ impl ProjectTrackerServer {
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
+
+    // Project Resource tools
+
+    #[tool(description = "Add a resource to a project")]
+    async fn add_project_resource(&self, Parameters(req): Parameters<AddProjectResourceRequest>) -> Result<CallToolResult, McpError> {
+        let project_uuid = Uuid::parse_str(&req.project_id)
+            .map_err(|e| McpError::invalid_params("Invalid UUID", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let resource = db::ProjectResource {
+            project_id: project_uuid,
+            person_email: req.person_email.clone(),
+            role: req.role,
+            created_at: chrono::Utc::now(),
+        };
+
+        let db = self.db.lock().await;
+        let repo = db::ProjectRepository::new(&db);
+        repo.add_project_resource(&project_uuid, &resource)
+            .map_err(|e| McpError::internal_error("Failed to add resource", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&resource)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "List resources for a project")]
+    async fn list_project_resources(&self, Parameters(req): Parameters<GetProjectResourcesRequest>) -> Result<CallToolResult, McpError> {
+        let project_uuid = Uuid::parse_str(&req.project_id)
+            .map_err(|e| McpError::invalid_params("Invalid UUID", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let db = self.db.lock().await;
+        let repo = db::ProjectRepository::new(&db);
+        let resources = repo.get_project_resources(&project_uuid)
+            .map_err(|e| McpError::internal_error("Failed to list resources", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&resources)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "Remove a resource from a project")]
+    async fn remove_project_resource(&self, Parameters(req): Parameters<RemoveProjectResourceRequest>) -> Result<CallToolResult, McpError> {
+        let project_uuid = Uuid::parse_str(&req.project_id)
+            .map_err(|e| McpError::invalid_params("Invalid UUID", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let db = self.db.lock().await;
+        let repo = db::ProjectRepository::new(&db);
+        repo.remove_project_resource(&project_uuid, &req.person_email)
+            .map_err(|e| McpError::internal_error("Failed to remove resource", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(format!("Removed resource {} from project {}", req.person_email, req.project_id))]))
+    }
+
+    // Milestone Resource tools
+
+    #[tool(description = "Add a resource to a milestone")]
+    async fn add_milestone_resource(&self, Parameters(req): Parameters<AddMilestoneResourceRequest>) -> Result<CallToolResult, McpError> {
+        let milestone_uuid = Uuid::parse_str(&req.milestone_id)
+            .map_err(|e| McpError::invalid_params("Invalid UUID", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let resource = db::MilestoneResource {
+            milestone_id: milestone_uuid,
+            person_email: req.person_email.clone(),
+            role: req.role,
+            created_at: chrono::Utc::now(),
+        };
+
+        let db = self.db.lock().await;
+        let repo = db::ProjectRepository::new(&db);
+        repo.add_milestone_resource(&milestone_uuid, &resource)
+            .map_err(|e| McpError::internal_error("Failed to add resource", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&resource)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "List resources for a milestone")]
+    async fn list_milestone_resources(&self, Parameters(req): Parameters<GetMilestoneResourcesRequest>) -> Result<CallToolResult, McpError> {
+        let milestone_uuid = Uuid::parse_str(&req.milestone_id)
+            .map_err(|e| McpError::invalid_params("Invalid UUID", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let db = self.db.lock().await;
+        let repo = db::ProjectRepository::new(&db);
+        let resources = repo.get_milestone_resources(&milestone_uuid)
+            .map_err(|e| McpError::internal_error("Failed to list resources", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let json = serde_json::to_string_pretty(&resources)
+            .map_err(|e| McpError::internal_error("Failed to serialize", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(json)]))
+    }
+
+    #[tool(description = "Remove a resource from a milestone")]
+    async fn remove_milestone_resource(&self, Parameters(req): Parameters<RemoveMilestoneResourceRequest>) -> Result<CallToolResult, McpError> {
+        let milestone_uuid = Uuid::parse_str(&req.milestone_id)
+            .map_err(|e| McpError::invalid_params("Invalid UUID", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        let db = self.db.lock().await;
+        let repo = db::ProjectRepository::new(&db);
+        repo.remove_milestone_resource(&milestone_uuid, &req.person_email)
+            .map_err(|e| McpError::internal_error("Failed to remove resource", Some(serde_json::json!({"error": e.to_string()}))))?;
+
+        Ok(CallToolResult::success(vec![Content::text(format!("Removed resource {} from milestone {}", req.person_email, req.milestone_id))]))
+    }
 }
 
 #[tool_handler]
@@ -374,7 +532,9 @@ impl ServerHandler for ProjectTrackerServer {
                 list_projects, get_project, create_project, \
                 list_people, search_people, get_person, create_person, \
                 list_teams, search_teams, get_team, create_team, add_team_member, remove_team_member, get_team_members, \
-                list_milestones".to_string()
+                list_milestones, \
+                add_project_resource, list_project_resources, remove_project_resource, \
+                add_milestone_resource, list_milestone_resources, remove_milestone_resource".to_string()
             ),
         }
     }

@@ -10,7 +10,7 @@ pub mod project_repo;
 pub mod schema;
 pub mod team_repo;
 
-pub use models::{Milestone, MilestoneNote, Person, Project, ProjectNote, ProjectStakeholder, StakeholderNote, Team, TeamMember};
+pub use models::{Milestone, MilestoneNote, MilestoneResource, Person, Project, ProjectNote, ProjectResource, ProjectStakeholder, StakeholderNote, Team, TeamMember};
 pub use person_repo::PersonRepository;
 pub use project_repo::ProjectRepository;
 pub use team_repo::TeamRepository;
@@ -65,6 +65,6 @@ mod tests {
 
         // Verify schema exists and migrations applied
         let version = schema::get_schema_version(&conn).unwrap();
-        assert_eq!(version, 4); // Current version after all migrations
+        assert_eq!(version, 5); // Current version after all migrations
     }
 }

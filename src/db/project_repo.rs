@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-use super::models::{Milestone, MilestoneNote, Project, ProjectNote, ProjectStakeholder, StakeholderNote};
+use super::models::{Milestone, MilestoneNote, MilestoneResource, Project, ProjectNote, ProjectResource, ProjectStakeholder, StakeholderNote};
 use anyhow::Result;
 use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
@@ -22,8 +22,8 @@ impl<'a> ProjectRepository<'a> {
     pub fn create(&self, project: &Project) -> Result<()> {
         self.conn.execute(
             "INSERT INTO projects (id, name, description, type, requirements_owner, technical_lead,
-                                  manager, team, due_date, jira_initiative, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                                  manager, team, start_date, due_date, jira_initiative, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 project.id.to_string(),
                 &project.name,
@@ -33,6 +33,7 @@ impl<'a> ProjectRepository<'a> {
                 &project.technical_lead,
                 &project.manager,
                 &project.team,
+                project.start_date.map(|d| d.to_rfc3339()),
                 project.due_date.map(|d| d.to_rfc3339()),
                 &project.jira_initiative,
                 project.created_at.to_rfc3339(),
@@ -49,7 +50,7 @@ impl<'a> ProjectRepository<'a> {
             .conn
             .query_row(
                 "SELECT id, name, description, type, requirements_owner, technical_lead, manager, team,
-                        due_date, jira_initiative, created_at, updated_at
+                        start_date, due_date, jira_initiative, created_at, updated_at
                  FROM projects WHERE id = ?1",
                 params![id.to_string()],
                 |row| {
@@ -62,10 +63,11 @@ impl<'a> ProjectRepository<'a> {
                         technical_lead: row.get(5)?,
                         manager: row.get(6)?,
                         team: row.get(7)?,
-                        due_date: row.get(8)?,
-                        jira_initiative: row.get(9)?,
-                        created_at: row.get(10)?,
-                        updated_at: row.get(11)?,
+                        start_date: row.get(8)?,
+                        due_date: row.get(9)?,
+                        jira_initiative: row.get(10)?,
+                        created_at: row.get(11)?,
+                        updated_at: row.get(12)?,
                     })
                 },
             )
@@ -77,7 +79,7 @@ impl<'a> ProjectRepository<'a> {
     pub fn list_all(&self) -> Result<Vec<Project>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, description, type, requirements_owner, technical_lead, manager, team,
-                    due_date, jira_initiative, created_at, updated_at
+                    start_date, due_date, jira_initiative, created_at, updated_at
              FROM projects ORDER BY name",
         )?;
 
@@ -92,10 +94,11 @@ impl<'a> ProjectRepository<'a> {
                     technical_lead: row.get(5)?,
                     manager: row.get(6)?,
                     team: row.get(7)?,
-                    due_date: row.get(8)?,
-                    jira_initiative: row.get(9)?,
-                    created_at: row.get(10)?,
-                    updated_at: row.get(11)?,
+                    start_date: row.get(8)?,
+                    due_date: row.get(9)?,
+                    jira_initiative: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -107,9 +110,9 @@ impl<'a> ProjectRepository<'a> {
     pub fn update(&self, project: &Project) -> Result<()> {
         let rows = self.conn.execute(
             "UPDATE projects SET name = ?1, description = ?2, type = ?3, requirements_owner = ?4,
-                                technical_lead = ?5, manager = ?6, team = ?7, due_date = ?8,
-                                jira_initiative = ?9, updated_at = ?10
-             WHERE id = ?11",
+                                technical_lead = ?5, manager = ?6, team = ?7, start_date = ?8, due_date = ?9,
+                                jira_initiative = ?10, updated_at = ?11
+             WHERE id = ?12",
             params![
                 &project.name,
                 &project.description,
@@ -118,6 +121,7 @@ impl<'a> ProjectRepository<'a> {
                 &project.technical_lead,
                 &project.manager,
                 &project.team,
+                project.start_date.map(|d| d.to_rfc3339()),
                 project.due_date.map(|d| d.to_rfc3339()),
                 &project.jira_initiative,
                 Utc::now().to_rfc3339(),
@@ -173,7 +177,7 @@ impl<'a> ProjectRepository<'a> {
     pub fn get_milestones(&self, project_id: &Uuid) -> Result<Vec<Milestone>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, project_id, number, name, description, technical_lead, team,
-                    design_doc_url, due_date, jira_epic, created_at, updated_at
+                    design_doc_url, start_date, due_date, jira_epic, created_at, updated_at
              FROM milestones WHERE project_id = ?1 ORDER BY number",
         )?;
 
@@ -188,10 +192,11 @@ impl<'a> ProjectRepository<'a> {
                     technical_lead: row.get(5)?,
                     team: row.get(6)?,
                     design_doc_url: row.get(7)?,
-                    due_date: row.get(8)?,
-                    jira_epic: row.get(9)?,
-                    created_at: row.get(10)?,
-                    updated_at: row.get(11)?,
+                    start_date: row.get(8)?,
+                    due_date: row.get(9)?,
+                    jira_epic: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -203,8 +208,8 @@ impl<'a> ProjectRepository<'a> {
     pub fn add_milestone(&self, milestone: &Milestone) -> Result<()> {
         self.conn.execute(
             "INSERT INTO milestones (id, project_id, number, name, description, technical_lead, team,
-                                    design_doc_url, due_date, jira_epic, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                                    design_doc_url, start_date, due_date, jira_epic, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 milestone.id.to_string(),
                 milestone.project_id.to_string(),
@@ -214,6 +219,7 @@ impl<'a> ProjectRepository<'a> {
                 &milestone.technical_lead,
                 &milestone.team,
                 &milestone.design_doc_url,
+                milestone.start_date.map(|d| d.to_rfc3339()),
                 milestone.due_date.map(|d| d.to_rfc3339()),
                 &milestone.jira_epic,
                 milestone.created_at.to_rfc3339(),
@@ -227,8 +233,8 @@ impl<'a> ProjectRepository<'a> {
     pub fn update_milestone(&self, milestone: &Milestone) -> Result<()> {
         let rows = self.conn.execute(
             "UPDATE milestones SET number = ?1, name = ?2, description = ?3, technical_lead = ?4,
-                                   team = ?5, design_doc_url = ?6, due_date = ?7, jira_epic = ?8, updated_at = ?9
-             WHERE id = ?10",
+                                   team = ?5, design_doc_url = ?6, start_date = ?7, due_date = ?8, jira_epic = ?9, updated_at = ?10
+             WHERE id = ?11",
             params![
                 milestone.number,
                 &milestone.name,
@@ -236,6 +242,7 @@ impl<'a> ProjectRepository<'a> {
                 &milestone.technical_lead,
                 &milestone.team,
                 &milestone.design_doc_url,
+                milestone.start_date.map(|d| d.to_rfc3339()),
                 milestone.due_date.map(|d| d.to_rfc3339()),
                 &milestone.jira_epic,
                 Utc::now().to_rfc3339(),
@@ -302,6 +309,144 @@ impl<'a> ProjectRepository<'a> {
 
         if rows == 0 {
             anyhow::bail!("Stakeholder not found");
+        }
+
+        Ok(())
+    }
+
+    // Project Resources
+
+    /// Add resource to project
+    pub fn add_project_resource(&self, project_id: &Uuid, resource: &ProjectResource) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO project_resources (project_id, person_email, role, created_at)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![
+                project_id.to_string(),
+                &resource.person_email,
+                &resource.role,
+                resource.created_at.to_rfc3339(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Get project resources
+    pub fn get_project_resources(&self, project_id: &Uuid) -> Result<Vec<ProjectResource>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT project_id, person_email, role, created_at
+             FROM project_resources WHERE project_id = ?1",
+        )?;
+
+        let resources = stmt
+            .query_map(params![project_id.to_string()], |row| {
+                Ok(ProjectResource {
+                    project_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
+                    person_email: row.get(1)?,
+                    role: row.get(2)?,
+                    created_at: row.get(3)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(resources)
+    }
+
+    /// Update a project resource
+    pub fn update_project_resource(&self, project_id: &Uuid, resource: &ProjectResource) -> Result<()> {
+        let rows = self.conn.execute(
+            "UPDATE project_resources SET role = ?1 WHERE project_id = ?2 AND person_email = ?3",
+            params![
+                &resource.role,
+                project_id.to_string(),
+                &resource.person_email,
+            ],
+        )?;
+
+        if rows == 0 {
+            anyhow::bail!("Project resource not found");
+        }
+
+        Ok(())
+    }
+
+    /// Remove resource from project
+    pub fn remove_project_resource(&self, project_id: &Uuid, person_email: &str) -> Result<()> {
+        let rows = self.conn.execute(
+            "DELETE FROM project_resources WHERE project_id = ?1 AND person_email = ?2",
+            params![project_id.to_string(), person_email],
+        )?;
+
+        if rows == 0 {
+            anyhow::bail!("Project resource not found");
+        }
+
+        Ok(())
+    }
+
+    /// Add resource to milestone
+    pub fn add_milestone_resource(&self, milestone_id: &Uuid, resource: &MilestoneResource) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO milestone_resources (milestone_id, person_email, role, created_at)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![
+                milestone_id.to_string(),
+                &resource.person_email,
+                &resource.role,
+                resource.created_at.to_rfc3339(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Get milestone resources
+    pub fn get_milestone_resources(&self, milestone_id: &Uuid) -> Result<Vec<MilestoneResource>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT milestone_id, person_email, role, created_at
+             FROM milestone_resources WHERE milestone_id = ?1",
+        )?;
+
+        let resources = stmt
+            .query_map(params![milestone_id.to_string()], |row| {
+                Ok(MilestoneResource {
+                    milestone_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
+                    person_email: row.get(1)?,
+                    role: row.get(2)?,
+                    created_at: row.get(3)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(resources)
+    }
+
+    /// Update a milestone resource
+    pub fn update_milestone_resource(&self, milestone_id: &Uuid, resource: &MilestoneResource) -> Result<()> {
+        let rows = self.conn.execute(
+            "UPDATE milestone_resources SET role = ?1 WHERE milestone_id = ?2 AND person_email = ?3",
+            params![
+                &resource.role,
+                milestone_id.to_string(),
+                &resource.person_email,
+            ],
+        )?;
+
+        if rows == 0 {
+            anyhow::bail!("Milestone resource not found");
+        }
+
+        Ok(())
+    }
+
+    /// Remove resource from milestone
+    pub fn remove_milestone_resource(&self, milestone_id: &Uuid, person_email: &str) -> Result<()> {
+        let rows = self.conn.execute(
+            "DELETE FROM milestone_resources WHERE milestone_id = ?1 AND person_email = ?2",
+            params![milestone_id.to_string(), person_email],
+        )?;
+
+        if rows == 0 {
+            anyhow::bail!("Milestone resource not found");
         }
 
         Ok(())
@@ -1009,5 +1154,269 @@ mod tests {
 
         let notes = repo.get_stakeholder_notes(&project.id, "alice@example.com").unwrap();
         assert_eq!(notes.len(), 0);
+    }
+
+    // Project Resource tests
+
+    #[test]
+    fn test_add_project_resource() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let mut resource = ProjectResource::new(project.id, "alice@example.com".to_string());
+        resource.role = Some("Developer".to_string());
+        repo.add_project_resource(&project.id, &resource).unwrap();
+
+        let resources = repo.get_project_resources(&project.id).unwrap();
+        assert_eq!(resources.len(), 1);
+        assert_eq!(resources[0].person_email, "alice@example.com");
+        assert_eq!(resources[0].role, Some("Developer".to_string()));
+    }
+
+    #[test]
+    fn test_get_project_resources_empty() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let resources = repo.get_project_resources(&project.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    #[test]
+    fn test_update_project_resource() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let mut resource = ProjectResource::new(project.id, "alice@example.com".to_string());
+        resource.role = Some("Junior Developer".to_string());
+        repo.add_project_resource(&project.id, &resource).unwrap();
+
+        resource.role = Some("Senior Developer".to_string());
+        repo.update_project_resource(&project.id, &resource).unwrap();
+
+        let resources = repo.get_project_resources(&project.id).unwrap();
+        assert_eq!(resources[0].role, Some("Senior Developer".to_string()));
+    }
+
+    #[test]
+    fn test_remove_project_resource() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let resource = ProjectResource::new(project.id, "alice@example.com".to_string());
+        repo.add_project_resource(&project.id, &resource).unwrap();
+
+        repo.remove_project_resource(&project.id, "alice@example.com").unwrap();
+
+        let resources = repo.get_project_resources(&project.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_project_cascades_to_resources() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let resource = ProjectResource::new(project.id, "alice@example.com".to_string());
+        repo.add_project_resource(&project.id, &resource).unwrap();
+
+        repo.delete(&project.id).unwrap();
+
+        // Resources should be deleted via cascade
+        let resources = repo.get_project_resources(&project.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_person_cascades_to_project_resources() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let resource = ProjectResource::new(project.id, "alice@example.com".to_string());
+        repo.add_project_resource(&project.id, &resource).unwrap();
+
+        person_repo.delete("alice@example.com").unwrap();
+
+        // Resources should be deleted via cascade
+        let resources = repo.get_project_resources(&project.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    // Milestone Resource tests
+
+    #[test]
+    fn test_add_milestone_resource() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let mut resource = MilestoneResource::new(milestone.id, "alice@example.com".to_string());
+        resource.role = Some("Developer".to_string());
+        repo.add_milestone_resource(&milestone.id, &resource).unwrap();
+
+        let resources = repo.get_milestone_resources(&milestone.id).unwrap();
+        assert_eq!(resources.len(), 1);
+        assert_eq!(resources[0].person_email, "alice@example.com");
+        assert_eq!(resources[0].role, Some("Developer".to_string()));
+    }
+
+    #[test]
+    fn test_get_milestone_resources_empty() {
+        let conn = setup_test_db();
+        let repo = ProjectRepository::new(&conn);
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let resources = repo.get_milestone_resources(&milestone.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    #[test]
+    fn test_update_milestone_resource() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let mut resource = MilestoneResource::new(milestone.id, "alice@example.com".to_string());
+        resource.role = Some("Junior Developer".to_string());
+        repo.add_milestone_resource(&milestone.id, &resource).unwrap();
+
+        resource.role = Some("Senior Developer".to_string());
+        repo.update_milestone_resource(&milestone.id, &resource).unwrap();
+
+        let resources = repo.get_milestone_resources(&milestone.id).unwrap();
+        assert_eq!(resources[0].role, Some("Senior Developer".to_string()));
+    }
+
+    #[test]
+    fn test_remove_milestone_resource() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let resource = MilestoneResource::new(milestone.id, "alice@example.com".to_string());
+        repo.add_milestone_resource(&milestone.id, &resource).unwrap();
+
+        repo.remove_milestone_resource(&milestone.id, "alice@example.com").unwrap();
+
+        let resources = repo.get_milestone_resources(&milestone.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_milestone_cascades_to_resources() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let resource = MilestoneResource::new(milestone.id, "alice@example.com".to_string());
+        repo.add_milestone_resource(&milestone.id, &resource).unwrap();
+
+        repo.delete_milestone(&milestone.id).unwrap();
+
+        // Resources should be deleted via cascade
+        let resources = repo.get_milestone_resources(&milestone.id).unwrap();
+        assert_eq!(resources.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_person_cascades_to_milestone_resources() {
+        let conn = setup_test_db();
+        let person_repo = crate::db::PersonRepository::new(&conn);
+        let repo = ProjectRepository::new(&conn);
+
+        let person = crate::db::Person::new("alice@example.com".to_string(), "Alice".to_string());
+        person_repo.create(&person).unwrap();
+
+        let project = Project::new("Test Project".to_string());
+        repo.create(&project).unwrap();
+
+        let milestone = Milestone::new(project.id, 1, "Milestone 1".to_string());
+        repo.add_milestone(&milestone).unwrap();
+
+        let resource = MilestoneResource::new(milestone.id, "alice@example.com".to_string());
+        repo.add_milestone_resource(&milestone.id, &resource).unwrap();
+
+        person_repo.delete("alice@example.com").unwrap();
+
+        // Resources should be deleted via cascade
+        let resources = repo.get_milestone_resources(&milestone.id).unwrap();
+        assert_eq!(resources.len(), 0);
     }
 }

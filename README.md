@@ -161,6 +161,7 @@ All data is stored in `~/.project-tracker/` by default (configurable via `data_d
   - Milestones with due dates and tracking
   - Notes with markdown support
   - Project-stakeholder relationships
+  - Resource allocations (project and milestone assignments)
 
 The database uses schema versioning with automatic migrations to ensure data integrity across application updates.
 
@@ -243,6 +244,16 @@ The MCP server provides the following tools to AI assistants:
 **Milestones:**
 - `list_milestones` - List milestones for a project
 
+**Project Resources:**
+- `add_project_resource` - Add a resource to a project (person_email, optional role)
+- `list_project_resources` - List all resources assigned to a project
+- `remove_project_resource` - Remove a resource from a project
+
+**Milestone Resources:**
+- `add_milestone_resource` - Add a resource to a milestone (person_email, optional role)
+- `list_milestone_resources` - List all resources assigned to a milestone
+- `remove_milestone_resource` - Remove a resource from a milestone
+
 #### Usage Example
 
 Once configured, you can ask Claude Desktop to interact with your Project Tracker data:
@@ -251,6 +262,9 @@ Once configured, you can ask Claude Desktop to interact with your Project Tracke
 - "Create a new project called 'Q2 Infrastructure Upgrade'"
 - "Who are all the people on my team?"
 - "List the milestones for project XYZ"
+- "Add alice@example.com as a developer to project XYZ"
+- "Show me all resources working on this project"
+- "Assign bob@example.com to milestone ABC with the role 'Tech Lead'"
 
 The MCP server uses the same database as the CLI and GUI, so all data is synchronized across all interfaces.
 

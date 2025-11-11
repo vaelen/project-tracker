@@ -128,6 +128,34 @@ pub fn initialize_schema(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    // Create project_resources junction table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS project_resources (
+            project_id TEXT NOT NULL,
+            person_email TEXT NOT NULL,
+            role TEXT,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (project_id, person_email),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY (person_email) REFERENCES people(email) ON DELETE CASCADE
+        )",
+        [],
+    )?;
+
+    // Create milestone_resources junction table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS milestone_resources (
+            milestone_id TEXT NOT NULL,
+            person_email TEXT NOT NULL,
+            role TEXT,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (milestone_id, person_email),
+            FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE CASCADE,
+            FOREIGN KEY (person_email) REFERENCES people(email) ON DELETE CASCADE
+        )",
+        [],
+    )?;
+
     // Create project_notes table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS project_notes (
@@ -364,6 +392,92 @@ pub fn apply_migrations(conn: &Connection) -> Result<()> {
         )?;
     }
 
+    // Migration to version 5: Add project_resources and milestone_resources tables
+    if current_version < 5 {
+        log::info!("Applying migration to version 5: Adding resource tables");
+
+        // Create project_resources table
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS project_resources (
+                project_id TEXT NOT NULL,
+                person_email TEXT NOT NULL,
+                role TEXT,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (project_id, person_email),
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (person_email) REFERENCES people(email) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        // Create milestone_resources table
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS milestone_resources (
+                milestone_id TEXT NOT NULL,
+                person_email TEXT NOT NULL,
+                role TEXT,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (milestone_id, person_email),
+                FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE CASCADE,
+                FOREIGN KEY (person_email) REFERENCES people(email) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, applied_at)
+             VALUES (5, datetime('now'))",
+            [],
+        )?;
+    }
+
+    // Migration to version 6: Add start_date to projects and milestones
+    if current_version < 6 {
+        log::info!("Applying migration to version 6: Adding start_date to projects and milestones");
+
+        // Check and add start_date to projects
+        let has_projects_start_date: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('projects') WHERE name='start_date'",
+                [],
+                |row| {
+                    let count: i32 = row.get(0)?;
+                    Ok(count > 0)
+                },
+            )?;
+
+        if !has_projects_start_date {
+            conn.execute(
+                "ALTER TABLE projects ADD COLUMN start_date TEXT",
+                [],
+            )?;
+        }
+
+        // Check and add start_date to milestones
+        let has_milestones_start_date: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('milestones') WHERE name='start_date'",
+                [],
+                |row| {
+                    let count: i32 = row.get(0)?;
+                    Ok(count > 0)
+                },
+            )?;
+
+        if !has_milestones_start_date {
+            conn.execute(
+                "ALTER TABLE milestones ADD COLUMN start_date TEXT",
+                [],
+            )?;
+        }
+
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, applied_at)
+             VALUES (6, datetime('now'))",
+            [],
+        )?;
+    }
+
     log::info!("Database migrations complete");
     Ok(())
 }
@@ -395,6 +509,8 @@ mod tests {
         assert!(tables.contains(&"projects".to_string()));
         assert!(tables.contains(&"milestones".to_string()));
         assert!(tables.contains(&"project_stakeholders".to_string()));
+        assert!(tables.contains(&"project_resources".to_string()));
+        assert!(tables.contains(&"milestone_resources".to_string()));
         assert!(tables.contains(&"project_notes".to_string()));
         assert!(tables.contains(&"milestone_notes".to_string()));
         assert!(tables.contains(&"stakeholder_notes".to_string()));
@@ -436,9 +552,9 @@ mod tests {
         // Apply migrations
         apply_migrations(&conn).unwrap();
 
-        // Should now be at version 4 (latest)
+        // Should now be at version 6 (latest)
         let version = get_schema_version(&conn).unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 6);
     }
 
     #[test]
@@ -451,7 +567,7 @@ mod tests {
         apply_migrations(&conn).unwrap();
 
         let version = get_schema_version(&conn).unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 6);
     }
 
     #[test]

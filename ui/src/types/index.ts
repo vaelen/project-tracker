@@ -31,6 +31,7 @@ export interface Project {
   technical_lead?: string;
   manager?: string;
   team?: string;
+  start_date?: string;
   due_date?: string;
   jira_initiative?: string;
   created_at: string;
@@ -67,6 +68,7 @@ export interface Milestone {
   technical_lead?: string;
   team?: string;
   design_doc_url?: string;
+  start_date?: string;
   due_date?: string;
   jira_epic?: string;
   created_at: string;
@@ -76,6 +78,20 @@ export interface Milestone {
 export interface ProjectStakeholder {
   project_id: string;
   stakeholder_email: string;
+  role?: string;
+  created_at: string;
+}
+
+export interface ProjectResource {
+  project_id: string;
+  person_email: string;
+  role?: string;
+  created_at: string;
+}
+
+export interface MilestoneResource {
+  milestone_id: string;
+  person_email: string;
   role?: string;
   created_at: string;
 }
