@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// Data storage directory
+    #[serde(default = "default_data_dir")]
     pub data_dir: String,
 
     /// Jira base URL (e.g., "https://jira.company.com/browse/")
@@ -36,6 +37,10 @@ pub struct Config {
 
 fn default_mcp_http_port() -> u16 {
     8080
+}
+
+fn default_data_dir() -> String {
+    "~/.project-tracker".to_string()
 }
 
 fn default_jira_url() -> String {
@@ -170,7 +175,7 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            data_dir: "~/.project-tracker".to_string(),
+            data_dir: default_data_dir(),
             jira_url: default_jira_url(),
             default_email_domain: default_email_domain(),
             project_types: default_project_types(),

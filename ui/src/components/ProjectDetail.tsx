@@ -14,10 +14,12 @@ import { PersonService } from '../services/personService';
 import { NoteService } from '../services/noteService';
 import { MilestoneForm } from './MilestoneForm';
 import { StakeholderForm } from './StakeholderForm';
+import { ProjectResourceForm } from './ProjectResourceForm';
+import { MilestoneResourceForm } from './MilestoneResourceForm';
 import { NoteForm } from './NoteForm';
 import { NoteList } from './NoteList';
 import { NoteViewModal } from './NoteViewModal';
-import type { Project, Milestone, ProjectStakeholder, Person, Note, ProjectNote, MilestoneNote, StakeholderNote } from '../types';
+import type { Project, Milestone, ProjectStakeholder, ProjectResource, MilestoneResource, Person, Note, ProjectNote, MilestoneNote, StakeholderNote } from '../types';
 
 const { Title, Link } = Typography;
 
@@ -31,6 +33,8 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [stakeholders, setStakeholders] = useState<ProjectStakeholder[]>([]);
+  const [projectResources, setProjectResources] = useState<ProjectResource[]>([]);
+  const [milestoneResources, setMilestoneResources] = useState<Map<string, MilestoneResource[]>>(new Map());
   const [people, setPeople] = useState<Person[]>([]);
   const [projectNotes, setProjectNotes] = useState<ProjectNote[]>([]);
   const [jiraBaseUrl, setJiraBaseUrl] = useState<string>('');
@@ -43,6 +47,14 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
   // Stakeholder modal state
   const [showStakeholderModal, setShowStakeholderModal] = useState(false);
   const [selectedStakeholder, setSelectedStakeholder] = useState<ProjectStakeholder | undefined>(undefined);
+
+  // Project resource modal state
+  const [showProjectResourceModal, setShowProjectResourceModal] = useState(false);
+  const [selectedProjectResource, setSelectedProjectResource] = useState<ProjectResource | undefined>(undefined);
+
+  // Milestone resource modal state
+  const [showMilestoneResourceModal, setShowMilestoneResourceModal] = useState(false);
+  const [selectedMilestoneResource, setSelectedMilestoneResource] = useState<MilestoneResource | undefined>(undefined);
 
   // Note modal state
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -68,10 +80,11 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
   const loadProjectData = async () => {
     setLoading(true);
     try {
-      const [projectData, milestonesData, stakeholdersData, peopleData, notesData, jiraUrl] = await Promise.all([
+      const [projectData, milestonesData, stakeholdersData, resourcesData, peopleData, notesData, jiraUrl] = await Promise.all([
         ProjectService.getProject(projectId),
         ProjectService.getProjectMilestones(projectId),
         ProjectService.getProjectStakeholders(projectId),
+        ProjectService.getProjectResources(projectId),
         PersonService.listPeople(),
         NoteService.getProjectNotes(projectId),
         ProjectService.getJiraUrl(),
@@ -80,9 +93,20 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
       setProject(projectData);
       setMilestones(milestonesData);
       setStakeholders(stakeholdersData);
+      setProjectResources(resourcesData);
       setPeople(peopleData);
       setProjectNotes(notesData);
       setJiraBaseUrl(jiraUrl);
+
+      // Load milestone resources for each milestone
+      const milestoneResourcesMap = new Map<string, MilestoneResource[]>();
+      await Promise.all(
+        milestonesData.map(async (milestone) => {
+          const resources = await ProjectService.getMilestoneResources(milestone.id);
+          milestoneResourcesMap.set(milestone.id, resources);
+        })
+      );
+      setMilestoneResources(milestoneResourcesMap);
     } catch (error) {
       message.error('Failed to load project details: ' + error);
     } finally {
@@ -199,6 +223,111 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
     } catch (error) {
       message.error('Failed to load stakeholder details: ' + error);
     }
+  };
+
+  // Project Resource handlers
+  const handleCreateProjectResource = () => {
+    setSelectedProjectResource(undefined);
+    setShowProjectResourceModal(true);
+  };
+
+  const handleEditProjectResource = (resource: ProjectResource) => {
+    setSelectedProjectResource(resource);
+    setShowProjectResourceModal(true);
+  };
+
+  const handleSaveProjectResource = async (resource: ProjectResource) => {
+    try {
+      if (selectedProjectResource) {
+        await ProjectService.updateProjectResource(projectId, resource);
+        message.success('Resource updated successfully');
+      } else {
+        await ProjectService.addProjectResource(projectId, resource);
+        message.success('Resource added successfully');
+      }
+      setShowProjectResourceModal(false);
+      setSelectedProjectResource(undefined);
+      await loadProjectData();
+    } catch (error) {
+      message.error('Failed to save resource: ' + error);
+    }
+  };
+
+  const handleCancelProjectResource = () => {
+    setShowProjectResourceModal(false);
+    setSelectedProjectResource(undefined);
+  };
+
+  const handleDeleteProjectResource = async (resource: ProjectResource) => {
+    Modal.confirm({
+      title: 'Delete Resource',
+      content: `Are you sure you want to remove ${resource.person_email} from this project?`,
+      okText: 'Delete',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await ProjectService.removeProjectResource(projectId, resource.person_email);
+          message.success('Resource removed successfully');
+          await loadProjectData();
+        } catch (error) {
+          message.error('Failed to remove resource: ' + error);
+        }
+      },
+    });
+  };
+
+  // Milestone Resource handlers
+  const handleCreateMilestoneResource = (milestoneId: string) => {
+    setSelectedMilestone(milestones.find(m => m.id === milestoneId));
+    setSelectedMilestoneResource(undefined);
+    setShowMilestoneResourceModal(true);
+  };
+
+  const handleEditMilestoneResource = (milestoneId: string, resource: MilestoneResource) => {
+    setSelectedMilestone(milestones.find(m => m.id === milestoneId));
+    setSelectedMilestoneResource(resource);
+    setShowMilestoneResourceModal(true);
+  };
+
+  const handleSaveMilestoneResource = async (resource: MilestoneResource) => {
+    if (!selectedMilestone) return;
+    try {
+      if (selectedMilestoneResource) {
+        await ProjectService.updateMilestoneResource(selectedMilestone.id, resource);
+        message.success('Resource updated successfully');
+      } else {
+        await ProjectService.addMilestoneResource(selectedMilestone.id, resource);
+        message.success('Resource added successfully');
+      }
+      setShowMilestoneResourceModal(false);
+      setSelectedMilestoneResource(undefined);
+      await loadProjectData();
+    } catch (error) {
+      message.error('Failed to save resource: ' + error);
+    }
+  };
+
+  const handleCancelMilestoneResource = () => {
+    setShowMilestoneResourceModal(false);
+    setSelectedMilestoneResource(undefined);
+  };
+
+  const handleDeleteMilestoneResource = async (milestoneId: string, resource: MilestoneResource) => {
+    Modal.confirm({
+      title: 'Delete Resource',
+      content: `Are you sure you want to remove ${resource.person_email} from this milestone?`,
+      okText: 'Delete',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await ProjectService.removeMilestoneResource(milestoneId, resource.person_email);
+          message.success('Resource removed successfully');
+          await loadProjectData();
+        } catch (error) {
+          message.error('Failed to remove resource: ' + error);
+        }
+      },
+    });
   };
 
   const handleCreateNote = () => {
@@ -494,6 +623,100 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
     },
   ];
 
+  const projectResourceColumns: ColumnsType<ProjectResource> = [
+    {
+      title: 'Name',
+      dataIndex: 'person_email',
+      key: 'name',
+      render: (email) => getPersonName(email),
+    },
+    {
+      title: 'Email',
+      dataIndex: 'person_email',
+      key: 'person_email',
+    },
+    {
+      title: 'Role',
+      dataIndex: 'role',
+      key: 'role',
+      render: (text) => text || '-',
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      fixed: 'right',
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditProjectResource(record)}
+          >
+            Edit
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteProjectResource(record)}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const getMilestoneResourceColumns = (milestoneId: string): ColumnsType<MilestoneResource> => [
+    {
+      title: 'Name',
+      dataIndex: 'person_email',
+      key: 'name',
+      render: (email) => getPersonName(email),
+    },
+    {
+      title: 'Email',
+      dataIndex: 'person_email',
+      key: 'person_email',
+    },
+    {
+      title: 'Role',
+      dataIndex: 'role',
+      key: 'role',
+      render: (text) => text || '-',
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      fixed: 'right',
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditMilestoneResource(milestoneId, record)}
+          >
+            Edit
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteMilestoneResource(milestoneId, record)}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -596,6 +819,29 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
       </Card>
 
       <Card
+        title="Resources"
+        style={{ marginBottom: 16 }}
+        extra={
+          <Button
+            type="primary"
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={handleCreateProjectResource}
+          >
+            Add Resource
+          </Button>
+        }
+      >
+        <Table
+          columns={projectResourceColumns}
+          dataSource={projectResources}
+          rowKey="person_email"
+          pagination={false}
+          locale={{ emptyText: 'No resources assigned yet' }}
+        />
+      </Card>
+
+      <Card
         title="Notes"
         extra={
           <Button
@@ -648,6 +894,40 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
           onCancel={handleCancelStakeholder}
           isModal
         />
+      </Modal>
+
+      <Modal
+        title={selectedProjectResource ? 'Edit Resource' : 'Add Resource'}
+        open={showProjectResourceModal}
+        onCancel={handleCancelProjectResource}
+        footer={null}
+        destroyOnClose
+      >
+        <ProjectResourceForm
+          projectId={projectId}
+          resource={selectedProjectResource}
+          onSave={handleSaveProjectResource}
+          onCancel={handleCancelProjectResource}
+          isModal
+        />
+      </Modal>
+
+      <Modal
+        title={selectedMilestoneResource ? 'Edit Resource' : 'Add Resource'}
+        open={showMilestoneResourceModal}
+        onCancel={handleCancelMilestoneResource}
+        footer={null}
+        destroyOnClose
+      >
+        {selectedMilestone && (
+          <MilestoneResourceForm
+            milestoneId={selectedMilestone.id}
+            resource={selectedMilestoneResource}
+            onSave={handleSaveMilestoneResource}
+            onCancel={handleCancelMilestoneResource}
+            isModal
+          />
+        )}
       </Modal>
 
       <Modal
@@ -707,6 +987,30 @@ export const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onEdit,
                 ) : '-'}
               </Descriptions.Item>
             </Descriptions>
+            <Card
+              title="Resources"
+              size="small"
+              style={{ marginBottom: 16 }}
+              extra={
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  onClick={() => handleCreateMilestoneResource(milestoneForDetail.id)}
+                >
+                  Add Resource
+                </Button>
+              }
+            >
+              <Table
+                columns={getMilestoneResourceColumns(milestoneForDetail.id)}
+                dataSource={milestoneResources.get(milestoneForDetail.id) || []}
+                rowKey="person_email"
+                pagination={false}
+                size="small"
+                locale={{ emptyText: 'No resources assigned yet' }}
+              />
+            </Card>
             <Card
               title="Notes"
               size="small"
