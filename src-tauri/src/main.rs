@@ -8,16 +8,17 @@
 use project_tracker::{
     config::Config,
     db::{self, Milestone, MilestoneNote, MilestoneResource, Person, Project, ProjectNote, ProjectResource, ProjectStakeholder, StakeholderNote, Team},
+    mcp::ProjectTrackerServer,
 };
 use rusqlite::Connection;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::State;
 use uuid::Uuid;
 
 // Application state shared across Tauri commands
 struct AppState {
     db: Mutex<Connection>,
-    config: Config,
+    config: Arc<Config>,
 }
 
 // Tauri commands (IPC functions callable from frontend)
@@ -251,6 +252,11 @@ async fn get_default_email_domain(state: State<'_, AppState>) -> Result<String, 
 #[tauri::command]
 async fn get_project_types(state: State<'_, AppState>) -> Result<Vec<String>, String> {
     Ok(state.config.project_types.clone())
+}
+
+#[tauri::command]
+async fn get_mcp_port(state: State<'_, AppState>) -> Result<u16, String> {
+    Ok(state.config.mcp_http_port)
 }
 
 // Stakeholder commands
@@ -524,10 +530,27 @@ fn main() {
     let db_path = config.database_path().expect("Failed to get database path");
     let conn = db::open_database(&db_path).expect("Failed to open database");
 
+    // Start MCP HTTP server in background
+    let mcp_port = config.mcp_http_port;
+    let mcp_config = config.clone();
+    let mcp_db_path = db_path.clone();
+
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+        rt.block_on(async {
+            match start_mcp_server(mcp_config, mcp_db_path, mcp_port).await {
+                Ok(_) => log::info!("MCP HTTP server stopped"),
+                Err(e) => log::error!("MCP HTTP server error: {}", e),
+            }
+        });
+    });
+
+    log::info!("MCP HTTP server starting on port {}", mcp_port);
+
     // Initialize app state
     let app_state = AppState {
         db: Mutex::new(conn),
-        config,
+        config: Arc::new(config),
     };
 
     tauri::Builder::default()
@@ -584,7 +607,49 @@ fn main() {
             get_jira_url,
             get_default_email_domain,
             get_project_types,
+            get_mcp_port,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+async fn start_mcp_server(
+    config: Config,
+    db_path: std::path::PathBuf,
+    port: u16,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use rmcp::transport::sse_server::{SseServer, SseServerConfig};
+    use tokio_util::sync::CancellationToken;
+
+    log::info!("Starting MCP HTTP/SSE server on port {}", port);
+
+    // Open a new database connection for the MCP server
+    let conn = db::open_database(&db_path)?;
+
+    // Create MCP server
+    let mcp_server = ProjectTrackerServer::new(config, conn);
+
+    // Configure SSE server
+    let bind_addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    let sse_config = SseServerConfig {
+        bind: bind_addr,
+        sse_path: "/sse".to_string(),
+        post_path: "/message".to_string(),
+        ct: CancellationToken::new(),
+        sse_keep_alive: Some(std::time::Duration::from_secs(30)),
+    };
+
+    // Create SSE server and router
+    let (sse_server, router) = SseServer::new(sse_config);
+
+    // Attach MCP service to SSE server
+    let _cancel_token = sse_server.with_service(move || mcp_server.clone());
+
+    // Bind and serve
+    let listener = tokio::net::TcpListener::bind(bind_addr).await?;
+    log::info!("MCP HTTP/SSE server listening on http://{}", bind_addr);
+
+    axum::serve(listener, router.into_make_service()).await?;
+
+    Ok(())
 }

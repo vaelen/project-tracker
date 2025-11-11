@@ -39,6 +39,7 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
     if (milestone) {
       form.setFieldsValue({
         ...milestone,
+        start_date: milestone.start_date ? dayjs(milestone.start_date) : null,
         due_date: milestone.due_date ? dayjs(milestone.due_date) : null,
       });
     }
@@ -56,6 +57,7 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
         technical_lead: values.technical_lead || undefined,
         team: values.team || undefined,
         design_doc_url: values.design_doc_url || undefined,
+        start_date: values.start_date ? values.start_date.toISOString() : undefined,
         due_date: values.due_date ? values.due_date.toISOString() : undefined,
         jira_epic: values.jira_epic || undefined,
         created_at: milestone?.created_at || new Date().toISOString(),
@@ -90,6 +92,7 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
         technical_lead: undefined,
         team: undefined,
         design_doc_url: '',
+        start_date: null,
         due_date: null,
         jira_epic: '',
       }}
@@ -136,6 +139,13 @@ export const MilestoneForm: React.FC<MilestoneFormProps> = ({
         label="Design Document URL"
       >
         <Input placeholder="https://..." />
+      </Form.Item>
+
+      <Form.Item
+        name="start_date"
+        label="Start Date"
+      >
+        <DatePicker style={{ width: '100%' }} />
       </Form.Item>
 
       <Form.Item

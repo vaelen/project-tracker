@@ -33,6 +33,11 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }
+tokio-util = "0.7"
+
+# MCP (Model Context Protocol) - HTTP/SSE transport
+rmcp = { version = "0.8", features = ["server", "transport-sse-server"] }
+axum = "0.8"
 
 # Logging
 log = "0.4"

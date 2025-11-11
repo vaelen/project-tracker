@@ -31,6 +31,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
     if (project) {
       form.setFieldsValue({
         ...project,
+        start_date: project.start_date ? dayjs(project.start_date) : null,
         due_date: project.due_date ? dayjs(project.due_date) : null,
       });
     }
@@ -48,6 +49,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
         technical_lead: values.technical_lead || undefined,
         manager: values.manager || undefined,
         team: values.team || undefined,
+        start_date: values.start_date ? values.start_date.toISOString() : undefined,
         due_date: values.due_date ? values.due_date.toISOString() : undefined,
         jira_initiative: values.jira_initiative || undefined,
         created_at: project?.created_at || new Date().toISOString(),
@@ -84,6 +86,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
           technical_lead: undefined,
           manager: undefined,
           team: undefined,
+          start_date: null,
           due_date: null,
           jira_initiative: '',
         }}
@@ -141,6 +144,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
           label="Team"
         >
           <TeamSelector placeholder="Select team" />
+        </Form.Item>
+
+        <Form.Item
+          name="start_date"
+          label="Start Date"
+        >
+          <DatePicker style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item

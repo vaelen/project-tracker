@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Layout,
   Typography,
@@ -12,6 +12,7 @@ import {
   Menu,
   theme,
 } from 'antd';
+import { invoke } from '@tauri-apps/api/core';
 import {
   ProjectOutlined,
   UserOutlined,
@@ -46,10 +47,24 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [mcpPort, setMcpPort] = useState<number | null>(null);
 
   const {
     token: { colorBgContainer },
   } = theme.useToken();
+
+  // Fetch MCP server port on mount
+  useEffect(() => {
+    const fetchMcpPort = async () => {
+      try {
+        const port = await invoke<number>('get_mcp_port');
+        setMcpPort(port);
+      } catch (error) {
+        console.error('Failed to fetch MCP port:', error);
+      }
+    };
+    fetchMcpPort();
+  }, []);
 
   const handleViewProject = (project: Project) => {
     setSelectedProject(project);
@@ -331,10 +346,15 @@ function App() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
         <Title level={3} style={{ color: 'white', margin: 0 }}>
           Project Tracker
         </Title>
+        {mcpPort && (
+          <Typography.Text style={{ color: 'white' }}>
+            MCP: http://127.0.0.1:{mcpPort}/sse
+          </Typography.Text>
+        )}
       </Header>
       <Layout>
         <Sider width={200} style={{ background: colorBgContainer }}>

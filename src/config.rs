@@ -25,9 +25,17 @@ pub struct Config {
     #[serde(default = "default_project_types")]
     pub project_types: Vec<String>,
 
+    /// MCP HTTP server port
+    #[serde(default = "default_mcp_http_port")]
+    pub mcp_http_port: u16,
+
     /// Logging configuration
     #[serde(default)]
     pub logging: LoggingConfig,
+}
+
+fn default_mcp_http_port() -> u16 {
+    8080
 }
 
 fn default_jira_url() -> String {
@@ -166,6 +174,7 @@ impl Default for Config {
             jira_url: default_jira_url(),
             default_email_domain: default_email_domain(),
             project_types: default_project_types(),
+            mcp_http_port: default_mcp_http_port(),
             logging: LoggingConfig::default(),
         }
     }

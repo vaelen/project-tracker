@@ -46,8 +46,9 @@ toml = "0.8"
 rusqlite = { version = "0.31", features = ["bundled", "chrono", "uuid"] }
 
 # MCP (Model Context Protocol)
-rmcp = { version = "0.8", features = ["server", "transport-io"] }
+rmcp = { version = "0.8", features = ["server", "transport-io", "transport-sse-server"] }
 schemars = "1.0"
+axum = "0.8"
 
 # Date/time handling
 chrono = { version = "0.4", features = ["serde"] }
