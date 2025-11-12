@@ -105,14 +105,19 @@ cd project-tracker
 # For Ubuntu/Debian:
 # sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
 
+# Build the Rust library
+cargo build --release
+
 # Install frontend dependencies
-cd ui && npm install && cd ..
+npm run install:ui
 
 # Development mode (with hot reload)
-cd src-tauri && cargo tauri dev
+npm run dev
 
 # Or build for production
-cd src-tauri && cargo tauri build
+npm run build
+
+# The built application will be in: src-tauri/target/release/bundle/
 ```
 
 ## Configuration
@@ -171,8 +176,11 @@ For detailed information about the database schema and storage architecture, see
 
 ### GUI Mode
 ```bash
-# Launch the GUI
-./track
+# Launch the GUI in development mode (with hot reload)
+npm run dev
+
+# Or run the built application
+./src-tauri/target/release/project-tracker
 ```
 
 ### CLI Mode
@@ -321,14 +329,17 @@ cargo build --release --bin track-mcp
 
 #### GUI Application
 ```bash
-# Install frontend dependencies
-cd ui && npm install && cd ..
+# Build the Rust library first
+cargo build --release
+
+# Install frontend dependencies (from project root)
+npm run install:ui
 
 # Development mode (hot reload)
-cd src-tauri && cargo tauri dev
+npm run dev
 
 # Production build
-cd src-tauri && cargo tauri build
+npm run build
 
 # Installers will be in: src-tauri/target/release/bundle/
 ```
@@ -368,6 +379,36 @@ See [CLAUDE.md](CLAUDE.md) for detailed development guidelines and architectural
 When adding new configuration options, be sure to update [docs/config.md](docs/config.md).
 
 ### Troubleshooting
+
+#### "cargo: 'tauri' is not a cargo command" or "Not a Tauri project" error
+
+If you see errors like:
+- `error: no such command: 'tauri'` when running `cargo tauri build`
+- `Error: Not a Tauri project` when running tauri commands from the `ui/` directory
+
+**Solution:** Use the npm scripts from the project root (recommended):
+
+```bash
+# From the project root directory
+npm run install:ui  # Install dependencies (includes @tauri-apps/cli)
+npm run dev         # Development mode
+npm run build       # Production build
+```
+
+The root `package.json` delegates to the `ui/` directory where the Tauri CLI is installed. This ensures:
+- The Tauri CLI can find the `src-tauri/` directory
+- Everyone uses the same version (controlled by `ui/package.json`)
+- Commands work consistently across all platforms
+
+**Alternative:** If you prefer using `cargo tauri` directly, install the CLI globally:
+
+```bash
+cargo install tauri-cli --version "^2.0.0"
+cd src-tauri
+cargo tauri dev
+```
+
+However, using the root npm scripts is the recommended approach.
 
 #### Build fails with "system library not found" errors
 

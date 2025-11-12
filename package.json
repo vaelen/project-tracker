@@ -1,0 +1,14 @@
+{
+  "name": "project-tracker",
+  "version": "0.1.0",
+  "description": "Project and resource management application for software engineering managers",
+  "scripts": {
+    "install:ui": "cd ui && npm install",
+    "dev": "ui/node_modules/.bin/tauri dev",
+    "build": "ui/node_modules/.bin/tauri build",
+    "tauri": "ui/node_modules/.bin/tauri"
+  },
+  "keywords": ["project-management", "resource-allocation", "tauri", "mcp"],
+  "author": "Andrew C. Young <andrew@vaelen.org>",
+  "license": "MIT"
+}
